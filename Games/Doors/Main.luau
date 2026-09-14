@@ -779,6 +779,10 @@ local EntityDistances = {
 	["GlitchAmbush"]  = 175,
 	["BackdoorRush"]  = 85,
 	["CustomEntity"]  = 85,
+    ["Bash"]           = 125,
+    ["Scribbles"]      = 85,
+    ["Drones"]         = 85,
+    ["DronesStampede"] = 100
 }
 
 Functions.GetNearestEntity = function(CheckDisabled, List, UseRaycasting)
