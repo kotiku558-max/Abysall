@@ -130,6 +130,22 @@ local Entities = {
 	["SallyMoving"] = {
 		Alias = "Sally",
 		NotifyMessage = { Title = "Entity 'Sally' has spawned.", Body = "Drop an item for her." }
+	},
+["Bash"] = {
+		Alias = "Bash",
+		NotifyMessage = { Title = "Entity 'Bash' has spawned.", Body = "Find a hiding spot." }
+	},
+	["Scribbles"] = {
+		Alias = "Scribbles",
+		NotifyMessage = { Title = "Entity 'Scribbles' has spawned.", Body = "Avoid its projectiles." }
+	},
+	["Drones"] = {
+		Alias = "Drones",
+		NotifyMessage = { Title = "Entity 'Drones' has spawned.", Body = "Keep your distance." }
+	},
+	["DronesStampede"] = {
+		Alias = "Drones Stampede",
+		NotifyMessage = { Title = "Entity 'Drones Stampede' has spawned.", Body = "Find a hiding spot." }
 	}
 }
 
@@ -150,6 +166,10 @@ local EntityIcons = {
 	["SallyMoving"]     = "rbxassetid://10840888070",
 	["MonumentEntity"]  = "rbxassetid://88933556873017",
 	["Groundskeeper"]   = "rbxassetid://114991380115557"
+	["Bash"]            = "rbxassetid://12571092295",
+	["Scribbles"]       = "rbxassetid://12711591665",
+	["Drones"]          = "rbxassetid://6023426923",
+	["DronesStampede"]  = "rbxassetid://6023426923"
 }
 
 local ItemNames = {
