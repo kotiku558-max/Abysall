@@ -131,7 +131,7 @@ local Entities = {
 		Alias = "Sally",
 		NotifyMessage = { Title = "Entity 'Sally' has spawned.", Body = "Drop an item for her." }
 	},
-["Bash"] = {
+	["Bash"] = {
 		Alias = "Bash",
 		NotifyMessage = { Title = "Entity 'Bash' has spawned.", Body = "Find a hiding spot." }
 	},
