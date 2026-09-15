@@ -4523,14 +4523,6 @@ Library:OnUnload(function()
 			local Hitbox = Object:FindFirstChild("Hitbox")
 			if Hitbox then Hitbox.CanTouch = true end
 		end
-		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
-			for _, Part in Object:GetDescendants() do
-					if Part:IsA("BasePart") then
-							Part.CanTouch = true
-							Part.CanCollide = true
-					end
-			end
-		end
 		if Object.Name == "GloomPile" then
 			for _, Part in Object:GetDescendants() do
 				if Part:IsA("BasePart") then Part.CanTouch = true end
