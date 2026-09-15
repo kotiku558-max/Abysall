@@ -131,7 +131,7 @@ local Entities = {
 		Alias = "Sally",
 		NotifyMessage = { Title = "Entity 'Sally' has spawned.", Body = "Drop an item for her." }
 	},
-	["Bash"] = {
+	["BashMoving"] = {
 		Alias = "Bash",
 		NotifyMessage = { Title = "Entity 'Bash' has spawned.", Body = "Find a hiding spot." }
 	},
@@ -166,7 +166,7 @@ local EntityIcons = {
 	["SallyMoving"]     = "rbxassetid://10840888070",
 	["MonumentEntity"]  = "rbxassetid://88933556873017",
 	["Groundskeeper"]   = "rbxassetid://114991380115557",
-	["Bash"]            = "rbxassetid://12571092295",
+	["BashMoving"]      = "rbxassetid://12571092295",
 	["Scribbles"]       = "rbxassetid://12711591665",
 	["Drones"]          = "rbxassetid://6023426923",
 	["DronesStampede"]  = "rbxassetid://6023426923"
