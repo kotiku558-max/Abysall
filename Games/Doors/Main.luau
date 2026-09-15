@@ -1885,7 +1885,7 @@ local EntityESPLabels = {
 	Snare = "Snare", GrumbleRig = "Grumble",
 	Drakobloxxer = "Drakobloxxer", Hole = "Mandrake Hole", Groundskeeper = "Groundskeeper",
 	LiveEntityBramble = "Bramble", Figure = "Figure", FigureRig = "Figure", FigureRagdoll = "Figure",
-	FakeDoor = "Dupe", DoorFake = "Dupe", Bash = "Bash", Scribbles = "Scribbles", Drones = "Drones", DronesStampede = "Drones Stampede"
+	FakeDoor = "Dupe", DoorFake = "Dupe", BashMoving = "Bash", Scribbles = "Scribbles", Drones = "Drones", DronesStampede = "Drones Stampede"
 }
 
 local NodeEntities = {
