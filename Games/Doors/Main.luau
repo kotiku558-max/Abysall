@@ -3817,6 +3817,23 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
+	elseif Name == "Drones" or Name == "DronesStampede" then
+		if Toggles.BypassDrones.Value then
+			for _, Part in Object:GetDescendants() do
+				if Part:IsA("BasePart") then
+					Part.CanTouch = false
+					Part.CanCollide = false
+				end
+			end
+		end
+		local Connection = Object.DescendantAdded:Connect(function(Part)
+			if Part:IsA("BasePart") then
+				Part.CanTouch = not Toggles.BypassDrones.Value
+				Part.CanCollide = not Toggles.BypassDrones.Value
+			end
+		end)
+		table.insert(Connections, Connection)
+		table.insert(Objects.Entities, Object)
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
