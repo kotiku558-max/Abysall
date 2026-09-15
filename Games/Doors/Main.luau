@@ -1889,7 +1889,7 @@ local EntityESPLabels = {
 }
 
 local NodeEntities = {
-	Rush = true, Ambush = true, Eyes = true, Blitz = true, Lookman = true, ["A-60"] = true, ["A-120"] = true, Sally = true, ["Jeff The Killer"] = true, Monument = true, ["AR0xMBUSH"] = true, ["RNIUSHCG=="] = true, Bash = true, Scribbles = true, ["Drones Stampede"] = true
+	Rush = true, Ambush = true, Eyes = true, Blitz = true, Lookman = true, ["A-60"] = true, ["A-120"] = true, Sally = true, ["Jeff The Killer"] = true, Monument = true, ["AR0xMBUSH"] = true, ["RNIUSHCG=="] = true, BashMoving = true, Scribbles = true, ["Drones Stampede"] = true
 }
 
 Toggles.DoorESPToggle:OnChanged(function(Value)
