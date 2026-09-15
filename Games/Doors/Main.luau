@@ -1406,6 +1406,18 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
+Toggles.BypassDrones:OnChanged(function(Value)
+	for _, Object in Objects.Entities do
+		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
+			for _, Part in Object:GetDescendants() do
+				if Part:IsA("BasePart") then
+					Part.CanTouch = not Value
+					Part.CanCollide = not Value
+				end
+			end
+		end
+	end
+end)
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
