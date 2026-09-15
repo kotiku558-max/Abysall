@@ -4038,7 +4038,6 @@ local AllowedInstances = {
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
-	Drones=true, DronesStampede=true
 }
 
 Functions.QueueObject = function(Object)
