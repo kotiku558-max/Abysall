@@ -3832,8 +3832,9 @@ Functions.HandleObject = function(Object)
 				Part.CanCollide = not Toggles.BypassDrones.Value
 			end
 		end)
-		table.insert(Connections, Connection)
-		table.insert(Objects.Entities, Object)
+			table.insert(Connections, Connection)
+			table.insert(Objects.Entities, Object)
+		end
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
