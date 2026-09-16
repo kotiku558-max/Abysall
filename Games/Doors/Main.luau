@@ -1301,6 +1301,7 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassSeekingWall",    { Text = "Bypass Se
 Groupboxes.Exploits_Bypass:AddToggle("BypassSnare",          { Text = "Bypass Snare",            Default = false, Tooltip = "Prevents 'Snare' from trapping you." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Banana",           Default = false, Tooltip = "Prevents 'Banana Peel' from slipping you up (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
+Groupboxes.Exploits_Bypass:AddToggle("AutoRansomTrigger",   { Text = "Auto Ransom Trigger",     Default = false, Tooltip = "Automatically moves and rotates camera to trigger the Ransom quest." })
 
 Toggles.BypassGiggle:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
@@ -1408,6 +1409,12 @@ Toggles.BypassJeff:OnChanged(function(Value)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
+	end
+end)
+Toggles.AutoRansomTrigger:OnChanged(function(Value)
+	if not Value and Globals.RansomTriggerConn then
+		Globals.RansomTriggerConn:Disconnect()
+		Globals.RansomTriggerConn = nil
 	end
 end)
 
@@ -3809,6 +3816,41 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
+		elseif Name == "Ransom" then
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Ransom"] then
+			Functions.AddESP({ Object = Object, Text = "Ransom", Color = Options.EntityESPColor.Value }, true)
+		end
+		if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
+			local ED = Entities["Ransom"]
+			Functions.Notify({ Title = ED.NotifyMessage.Title, Body = ED.NotifyMessage.Body, Image = EntityIcons["Ransom"] })
+		end
+		if Toggles.AutoRansomTrigger.Value then
+			task.spawn(function()
+				while Object.Parent and Toggles.AutoRansomTrigger.Value do
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
+						-- Шаг 1: повернуть камеру влево
+						local OriginalCFrame = Camera.CFrame
+						Camera.CFrame = OriginalCFrame * CFrame.Angles(0, math.rad(20), 0)
+						task.wait(0.15)
+						-- Шаг 2: повернуть камеру вправо
+						Camera.CFrame = OriginalCFrame * CFrame.Angles(0, math.rad(-20), 0)
+						task.wait(0.15)
+						-- Шаг 3: вернуть камеру обратно
+						Camera.CFrame = OriginalCFrame
+						task.wait(0.15)
+						-- Шаг 4: сделать шаг вперёд
+						local Forward = RootPart.CFrame.LookVector
+						Humanoid:MoveTo(RootPart.Position + Forward * 2)
+						task.wait(0.3)
+						-- Шаг 5: шаг назад
+						Humanoid:MoveTo(RootPart.Position - Forward * 2)
+						task.wait(0.3)
+					end
+					task.wait(0.5)
+				end
+			end)
+		end
+		table.insert(Objects.Entities, Object)
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
