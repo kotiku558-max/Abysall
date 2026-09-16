@@ -1052,6 +1052,15 @@ local Window = Library:CreateWindow({
 
 Abysall.Interface.ApplyInfoTab(Window)
 
+-- [THEME] Light blue theme
+Library.AccentColor = Color3.fromRGB(0, 200, 255)
+Library.AccentColorDark = Color3.fromRGB(0, 150, 200)
+Library.BackgroundColor = Color3.fromRGB(135, 206, 235)
+Library.FontColor = Color3.fromRGB(20, 60, 100)
+Library.OutlineColor = Color3.fromRGB(0, 170, 255)
+Library.BlackColor = Color3.fromRGB(100, 170, 220)
+Library.TitleColor = Color3.fromRGB(10, 50, 90)
+
 local Tabs = {
 	General  = Window:AddTab("General", "house"),
 	Exploits = Window:AddTab("Exploits", "shield"),
