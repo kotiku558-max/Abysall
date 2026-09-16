@@ -233,6 +233,8 @@ local ItemNames = {
 	["Pizza"]            = "Pizza",
 	["PaperPlane"]       = "Paper Plane",
 	["HoneyPot"]         = "Honey Pot"
+	["Leftovers"]		 = "Leftovers"
+	["FihFlakes"]		 = "FihFlakes"
 }
 
 local CutsceneNames = {
