@@ -1574,9 +1574,9 @@ Toggles.NoRansomDamage:OnChanged(function(Value)
 		end
 	end
 	if Value then
-		if not Globals.RansomHealConn then
-			Globals.RansomHealConn = Services.RunService.Heartbeat:Connect(function()
-				if Humanoid and Humanoid.Health < Humanoid.MaxHealth then
+		if not Globals.RansomHealConn and Humanoid then
+			Globals.RansomHealConn = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+				if Humanoid.Health < Humanoid.MaxHealth then
 					Humanoid.Health = Humanoid.MaxHealth
 				end
 			end)
@@ -1589,9 +1589,15 @@ Toggles.NoRansomDamage:OnChanged(function(Value)
 	end
 end)
 Toggles.RemoveRansom:OnChanged(function(Value)
-	if Modules.RansomModule then
-		Modules.RansomModule.Name = Value and "Ransom_Disabled" or "Ransom"
+	-- Сканируем ВСЕ модули в UIModules на наличие "ransom" в имени
+	local UIModules = Globals.MainUI.Initiator.Main_Game.RemoteListener.Modules
+	for _, Module in UIModules:GetChildren() do
+		if string.find(string.lower(Module.Name), "ransom") then
+			Module:SetAttribute("OriginalName", Module.Name)
+			Module.Name = Value and Module.Name .. "_Disabled" or Module:GetAttribute("OriginalName")
+		end
 	end
+	-- Удаляем объекты Ransom из workspace
 	if Value then
 		for _, Object in Services.Workspace:GetDescendants() do
 			if string.find(string.lower(Object.Name), "ransom") then
@@ -1904,7 +1910,7 @@ Groupboxes.Visuals_ESP_Toggles:AddToggle("LadderESPToggle",     { Text = "Ladder
 Groupboxes.Visuals_ESP_Toggles:AddDivider()
 Groupboxes.Visuals_ESP_Toggles:AddDropdown("EntityESPOptions",     { 
 	Text = "Entity List",
-	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Snare","Giggle","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede" },
+	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Snare","Giggle","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede","Forget-Me-Not" },
 	Multi = true,
 	AllowNull = true
 })
@@ -3855,6 +3861,11 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
+	elseif Name == "Flower1" or Name == "Flower2" or Name == "Flower3" or Name == "Flower4" or Name == "ForgetMeNotVineDoors" then
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Forget-Me-Not"] then
+			Functions.AddESP({ Object = Object, Text = "Forget-Me-Not (" .. Name .. ")", Color = Options.EntityESPColor.Value }, true)
+		end
+		table.insert(Objects.Entities, Object)
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
@@ -4073,6 +4084,7 @@ local AllowedInstances = {
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
+	Flower1=true, Flower2=true, Flower3=true, Flower4=true, ForgetMeNotVineDoors=true,
 }
 
 Functions.QueueObject = function(Object)
