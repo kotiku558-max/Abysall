@@ -3056,7 +3056,7 @@ Functions.HandleCharacter = function(NewCharacter)
 		end
 
 		if Globals.SelfKilled and Globals.MainUI:FindFirstChild("Statistics") then
-			Globals.MainUI.Statistics.Death.Text = "Died to Abysall Hub"
+			Globals.MainUI.Statistics.Death.Text = "Died to Kitty Hub"
 		end
 
 		local MainFrame = Globals.MainUI:FindFirstChild("MainFrame")
