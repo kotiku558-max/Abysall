@@ -1038,14 +1038,30 @@ Functions.GetRandomCode = function()
     return NewCode
 end
 
--- [THEME] Light blue theme — должен быть ДО CreateWindow
-Library.AccentColor = Color3.fromRGB(0, 200, 255)
-Library.AccentColorDark = Color3.fromRGB(0, 150, 200)
-Library.BackgroundColor = Color3.fromRGB(135, 206, 235)
-Library.FontColor = Color3.fromRGB(20, 60, 100)
-Library.OutlineColor = Color3.fromRGB(0, 170, 255)
-Library.BlackColor = Color3.fromRGB(100, 170, 220)
-Library.TitleColor = Color3.fromRGB(10, 50, 90)
+if not Library.Scheme then
+	Library.Scheme = setmetatable({}, {
+		__index = function(Self, Name)
+			return Library[Name]
+		end
+	})
+end
+
+-- [THEME] Light blue theme — задай напрямую на Scheme и Library
+Library.Scheme.AccentColor       = Color3.fromRGB(0, 200, 255)
+Library.Scheme.AccentColorDark   = Color3.fromRGB(0, 150, 200)
+Library.Scheme.BackgroundColor   = Color3.fromRGB(135, 206, 235)
+Library.Scheme.FontColor        = Color3.fromRGB(20, 60, 100)
+Library.Scheme.OutlineColor     = Color3.fromRGB(0, 170, 255)
+Library.Scheme.BlackColor       = Color3.fromRGB(100, 170, 220)
+
+Library.AccentColor       = Color3.fromRGB(0, 200, 255)
+Library.AccentColorDark   = Color3.fromRGB(0, 150, 200)
+Library.BackgroundColor   = Color3.fromRGB(135, 206, 235)
+Library.FontColor        = Color3.fromRGB(20, 60, 100)
+Library.OutlineColor     = Color3.fromRGB(0, 170, 255)
+Library.BlackColor       = Color3.fromRGB(100, 170, 220)
+
+function NotificationLibrary:Notify(TitleText, Desc, Delay)
 
 local Window = Library:CreateWindow({
 	Title = "Kitty Hub",
