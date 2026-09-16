@@ -641,20 +641,17 @@ local FakeEvents = {
 	Shade   = Instance.new("RemoteEvent"),
 	A90     = Instance.new("RemoteEvent"),
 	Surge   = Instance.new("RemoteEvent"),
-	Ransom  = Instance.new("RemoteEvent"),
 }
 
 FakeEvents.Screech.Name  = "Screech"
 FakeEvents.Shade.Name    = "ShadeResult"
 FakeEvents.A90.Name      = "A90"
 FakeEvents.Surge.Name    = "SurgeRemote"
-FakeEvents.Ransom.Name   = "Ransom"
 
 FakeEvents.Screech_Real = RemotesFolder:WaitForChild("Screech")
 FakeEvents.Shade_Real   = RemotesFolder:WaitForChild("ShadeResult")
 FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
-FakeEvents.Ransom_Real  = RemotesFolder:FindFirstChild("Ransom") or RemotesFolder:FindFirstChild("RansomRemote") or RemotesFolder:FindFirstChild("RansomEvent")
 
 if RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed") then
     local RealRemote = RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed")
@@ -1488,13 +1485,11 @@ Groupboxes.Exploits_Remove:AddToggle("RemoveHalt",    { Text = "Remove Halt",   
 Groupboxes.Exploits_Remove:AddToggle("RemoveA90",     { Text = "Remove A-90",     Default = false, Tooltip = "Prevents 'A-90' from spawning." })
 Groupboxes.Exploits_Remove:AddToggle("RemoveDread",   { Text = "Remove Dread",    Default = false, Tooltip = "Prevents 'Dread' from spawning." })
 Groupboxes.Exploits_Remove:AddToggle("RemoveSurge", { Text = "Remove Surge", Default = false, Tooltip = "Prevents 'Surge' from spawning."})
-Groupboxes.Exploits_Remove:AddToggle("RemoveRansom",    { Text = "Remove Ransom",     Default = false, Tooltip = "Prevents 'Ransom' from spawning." })
 Groupboxes.Exploits_Remove:AddDivider()
 Groupboxes.Exploits_Remove:AddToggle("NoScreechDamage", { Text = "No Screech Damage", Default = false, Tooltip = "Prevents 'Screech' from hurting you." })
 Groupboxes.Exploits_Remove:AddToggle("NoHaltDamage",    { Text = "No Halt Damage",    Default = false, Tooltip = "Prevents 'Halt' from hurting you." })
 Groupboxes.Exploits_Remove:AddToggle("NoA90Damage",     { Text = "No A-90 Damage",    Default = false, Tooltip = "Prevents 'A-90' from hurting you." })
 Groupboxes.Exploits_Remove:AddToggle("NoSurgeDamage",   { Text = "No Surge Damage",   Default = false, Tooltip = "Prevents 'Surge' from hurting you." })
-Groupboxes.Exploits_Remove:AddToggle("NoRansomDamage",  { Text = "No Ransom Damage",  Default = false, Tooltip = "Prevents 'Ransom' from hurting you." })
 
 Toggles.NoScreechDamage:OnChanged(function(Value)
 	if Value then
@@ -1561,51 +1556,6 @@ end)
 Toggles.RemoveSurge:OnChanged(function(Value)
 	if Globals.SurgeFrame then
 		Globals.SurgeFrame.Name = (Value and "SurgeVignette_Disabled" or "SurgeVignette")
-	end
-end)
-Toggles.NoRansomDamage:OnChanged(function(Value)
-	if FakeEvents.Ransom_Real then
-		if Value then
-			FakeEvents.Ransom.Parent = RemotesFolder
-			FakeEvents.Ransom_Real.Parent = nil
-		else
-			FakeEvents.Ransom_Real.Parent = RemotesFolder
-			FakeEvents.Ransom.Parent = nil
-		end
-	end
-	if Value then
-		if not Globals.RansomHealConn and Humanoid then
-			Globals.RansomHealConn = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-				if Humanoid.Health < Humanoid.MaxHealth then
-					Humanoid.Health = Humanoid.MaxHealth
-				end
-			end)
-		end
-	else
-		if Globals.RansomHealConn then
-			Globals.RansomHealConn:Disconnect()
-			Globals.RansomHealConn = nil
-		end
-	end
-end)
-Toggles.RemoveRansom:OnChanged(function(Value)
-	-- Сканируем ВСЕ модули в UIModules на наличие "Ransom" в имени
-	local UIModules = Globals.MainUI.Initiator.Main_Game.RemoteListener.Modules
-	for _, Module in UIModules:GetChildren() do
-		if string.find(string.lower(Module.Name), "Ransom") then
-			Module:SetAttribute("OriginalName", Module.Name)
-			Module.Name = Value and Module.Name .. "_Disabled" or Module:GetAttribute("OriginalName")
-		end
-	end
-	-- Удаляем объекты Ransom из workspace
-	if Value then
-		for _, Object in Services.Workspace:GetDescendants() do
-			if string.find(string.lower(Object.Name), "Ransom") then
-				if Object:IsA("Model") or Object:IsA("BasePart") then
-					Object:Destroy()
-				end
-			end
-		end
 	end
 end)
 
@@ -2817,13 +2767,11 @@ Functions.HandleCharacter = function(NewCharacter)
 	Modules.Screech         = UIModules.Screech
 	Modules.Dread           = UIModules:FindFirstChild("Dread")
 	Modules.SpiderJumpscare = UIModules.SpiderJumpscare
-	Modules.RansomModule    = UIModules:FindFirstChild("Ransom") or UIModules:FindFirstChild("RansomHandler")
 
 	if Toggles.RemoveScreech.Value    then Modules.Screech.Name = "Screech_Disabled" end
 	if Toggles.RemoveA90.Value and Modules.A90   then Modules.A90.Name = "A90_Disabled" end
 	if Toggles.RemoveDread.Value and Modules.Dread then Modules.Dread.Name = "Dread_Disabled" end
 	if Toggles.DisableTimothyJumpscare.Value then Modules.SpiderJumpscare.Name = "SpiderJumpscare_Disabled" end
-	if Toggles.RemoveRansom.Value and Modules.RansomModule then Modules.RansomModule.Name = "Ransom_Disabled" end
 
 	if Toggles.DisableHideVignette.Value then
 		local Vignette = Globals.MainUI:FindFirstChild("HideVignette") or Globals.MainUI.MainFrame:FindFirstChild("HideVignette")
@@ -4617,14 +4565,6 @@ Library:OnUnload(function()
 	if FakeEvents.Surge_Real then
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
-	end
-	if FakeEvents.Ransom_Real then
-		FakeEvents.Ransom:Destroy()
-		FakeEvents.Ransom_Real.Parent = RemotesFolder
-	end
-	if Globals.RansomHealConn then
-		Globals.RansomHealConn:Disconnect()
-		Globals.RansomHealConn = nil
 	end
 
 	Globals.SeekNodesFolder:Destroy()
