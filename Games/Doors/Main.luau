@@ -4621,23 +4621,4 @@ end)
 
 while not Globals.MainUI do task.wait() end
 Abysall.Interface.ApplySettingsTab(Window)
-
--- [THEME] Light blue theme — после загрузки сохранённой темы
-Library.AccentColor = Color3.fromRGB(0, 200, 255)
-Library.AccentColorDark = Color3.fromRGB(0, 150, 200)
-Library.BackgroundColor = Color3.fromRGB(135, 206, 235)
-Library.FontColor = Color3.fromRGB(20, 60, 100)
-Library.OutlineColor = Color3.fromRGB(0, 170, 255)
-Library.BlackColor = Color3.fromRGB(100, 170, 220)
-
--- Принудительно обновить все UI-элементы
-pcall(function() Library:UpdateTheme() end)
-
--- Запасной вариант: если UpdateTheme не существует
-pcall(function()
-    for _, Func in pairs(Library.ThemeObjects or {}) do
-        Func()
-    end
-end)
-
 Functions.Notify({ Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds." , Body = "Press '" .. tostring(Options.MenuKeybind.Value) .. "' to toggle the UI."})
