@@ -2809,11 +2809,13 @@ Functions.HandleCharacter = function(NewCharacter)
 	Modules.Screech         = UIModules.Screech
 	Modules.Dread           = UIModules:FindFirstChild("Dread")
 	Modules.SpiderJumpscare = UIModules.SpiderJumpscare
+	Modules.RansomModule    = UIModules:FindFirstChild("Ransom") or UIModules:FindFirstChild("RansomHandler")
 
 	if Toggles.RemoveScreech.Value    then Modules.Screech.Name = "Screech_Disabled" end
 	if Toggles.RemoveA90.Value and Modules.A90   then Modules.A90.Name = "A90_Disabled" end
 	if Toggles.RemoveDread.Value and Modules.Dread then Modules.Dread.Name = "Dread_Disabled" end
 	if Toggles.DisableTimothyJumpscare.Value then Modules.SpiderJumpscare.Name = "SpiderJumpscare_Disabled" end
+	if Toggles.RemoveRansom.Value and Modules.RansomModule then Modules.RansomModule.Name = "Ransom_Disabled" end
 
 	if Toggles.DisableHideVignette.Value then
 		local Vignette = Globals.MainUI:FindFirstChild("HideVignette") or Globals.MainUI.MainFrame:FindFirstChild("HideVignette")
@@ -4601,6 +4603,14 @@ Library:OnUnload(function()
 	if FakeEvents.Surge_Real then
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
+	end
+	if FakeEvents.Ransom_Real then
+		FakeEvents.Ransom:Destroy()
+		FakeEvents.Ransom_Real.Parent = RemotesFolder
+	end
+	if Globals.RansomHealConn then
+		Globals.RansomHealConn:Disconnect()
+		Globals.RansomHealConn = nil
 	end
 
 	Globals.SeekNodesFolder:Destroy()
