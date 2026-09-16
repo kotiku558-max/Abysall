@@ -497,7 +497,7 @@ Functions.Notify = function(Settings)
 		Settings.Body = "..."
 	end
 
-	if not Options.NotifyStyle or Options.NotifyStyle.Value == "Abysall" then
+	if not Options.NotifyStyle or Options.NotifyStyle.Value == "Kitty" then
 		local Sound = Instance.new("Sound", HiddenContainer)
 		Sound.SoundId = "rbxassetid://8784885431"
 		Sound.Volume = (Toggles.NotifyPlaySound and Toggles.NotifyPlaySound.Value and Options.NotifySoundVolume.Value) or (Toggles.NotifyPlaySound and 0 or 3)
