@@ -3809,9 +3809,19 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
-	elseif Name == "ForgetMeNot" or Name == "Flower1" or Name == "Flower2" or Name == "Flower3" or Name == "Flower4" or Name == "ForgetMeNotVineDoors" then
+	elseif Name == "ForgetMeNotVineDoors" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Forget-Me-Not"] then
-			Functions.AddESP({ Object = Object, Text = "Forget-Me-Not", Color = Options.EntityESPColor.Value }, true)
+			Functions.AddESP({ Object = Object, Text = "FMN Real Door", Color = Color3.fromRGB(0, 255, 0), TextColor = Color3.fromRGB(0, 255, 0) }, true)
+		end
+		table.insert(Objects.Entities, Object)
+	elseif Name == "ForgetMeNot" or Name == "ForgetMeNotJumpscare" then
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Forget-Me-Not"] then
+			Functions.AddESP({ Object = Object, Text = "FMN Fake Door", Color = Color3.fromRGB(255, 0, 0), TextColor = Color3.fromRGB(255, 0, 0) }, true)
+		end
+		table.insert(Objects.Entities, Object)
+	elseif Name == "Flower1" or Name == "Flower2" or Name == "Flower3" or Name == "Flower4" then
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Forget-Me-Not"] then
+			Functions.AddESP({ Object = Object, Text = "FMN Flower", Color = Options.EntityESPColor.Value }, true)
 		end
 		table.insert(Objects.Entities, Object)
 	elseif Name == "GrumbleRig" then
@@ -4032,7 +4042,7 @@ local AllowedInstances = {
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
-	ForgetMeNot=true, Flower1=true, Flower2=true, Flower3=true, Flower4=true, ForgetMeNotVineDoors=true,
+	ForgetMeNot=true, Flower1=true, Flower2=true, Flower3=true, Flower4=true, ForgetMeNotVineDoors=true, ForgetMeNotJumpscare=true,
 }
 
 Functions.QueueObject = function(Object)
