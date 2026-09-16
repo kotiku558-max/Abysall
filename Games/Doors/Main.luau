@@ -1589,10 +1589,10 @@ Toggles.NoRansomDamage:OnChanged(function(Value)
 	end
 end)
 Toggles.RemoveRansom:OnChanged(function(Value)
-	-- Сканируем ВСЕ модули в UIModules на наличие "ransom" в имени
+	-- Сканируем ВСЕ модули в UIModules на наличие "Ransom" в имени
 	local UIModules = Globals.MainUI.Initiator.Main_Game.RemoteListener.Modules
 	for _, Module in UIModules:GetChildren() do
-		if string.find(string.lower(Module.Name), "ransom") then
+		if string.find(string.lower(Module.Name), "Ransom") then
 			Module:SetAttribute("OriginalName", Module.Name)
 			Module.Name = Value and Module.Name .. "_Disabled" or Module:GetAttribute("OriginalName")
 		end
@@ -1600,7 +1600,7 @@ Toggles.RemoveRansom:OnChanged(function(Value)
 	-- Удаляем объекты Ransom из workspace
 	if Value then
 		for _, Object in Services.Workspace:GetDescendants() do
-			if string.find(string.lower(Object.Name), "ransom") then
+			if string.find(string.lower(Object.Name), "Ransom") then
 				if Object:IsA("Model") or Object:IsA("BasePart") then
 					Object:Destroy()
 				end
