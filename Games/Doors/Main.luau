@@ -1860,7 +1860,7 @@ Groupboxes.Visuals_ESP_Toggles:AddToggle("LadderESPToggle",     { Text = "Ladder
 Groupboxes.Visuals_ESP_Toggles:AddDivider()
 Groupboxes.Visuals_ESP_Toggles:AddDropdown("EntityESPOptions",     { 
 	Text = "Entity List",
-	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Snare","Giggle","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede" },
+	Values = { "Rush","Ambush","Eyes","Dupe","Figure","Blitz","Lookman","Snare","Giggle","Gloombat Eggs","Grumble","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Mandrake Hole","Monument","Bramble","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede","Forget-Me-Not","ForgetMeNotVineDoors","Flower1","Flower2","Flower3","Flower4" },
 	Multi = true,
 	AllowNull = true
 })
@@ -3809,6 +3809,11 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
+	elseif Name == "ForgetMeNot" or Name == "Flower1" or Name == "Flower2" or Name == "Flower3" or Name == "Flower4" or Name == "ForgetMeNotVineDoors" then
+		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Forget-Me-Not"] then
+			Functions.AddESP({ Object = Object, Text = "Forget-Me-Not", Color = Options.EntityESPColor.Value }, true)
+		end
+		table.insert(Objects.Entities, Object)
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
@@ -4027,6 +4032,7 @@ local AllowedInstances = {
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
+	ForgetMeNot=true, Flower1=true, Flower2=true, Flower3=true, Flower4=true, ForgetMeNotVineDoors=true,
 }
 
 Functions.QueueObject = function(Object)
