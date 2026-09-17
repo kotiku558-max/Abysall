@@ -1431,66 +1431,62 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomTriggerConn2:Disconnect()
 			Globals.RansomTriggerConn2 = nil
 		end
+		if Humanoid then
+			Humanoid:Move(Vector3.zero)
+		end
 		return
 	end
 
+	local function RansomWalk()
+		while Toggles.AutoRansomTrigger.Value do
+			if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
+				-- 1 секунда вперёд
+				Humanoid:Move(RootPart.CFrame.LookVector)
+				task.wait(1)
+				-- 1 секунда назад
+				Humanoid:Move(-RootPart.CFrame.LookVector)
+				task.wait(1)
+				-- 1 секунда налево
+				Humanoid:Move(-RootPart.CFrame.RightVector)
+				task.wait(1)
+				-- 1 секунду направо
+				Humanoid:Move(RootPart.CFrame.RightVector)
+				task.wait(1)
+			else
+				task.wait(0.5)
+			end
+		end
+		if Humanoid then
+			Humanoid:Move(Vector3.zero)
+		end
+	end
+
+	-- Conn 1: слушаем PlayerGui (Ransom — экранная сущность)
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			task.spawn(function()
-				task.wait(0.3)
-				while Desc.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						-- 1 секунда вперёд
-						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
-						task.wait(1)
-						-- 1 секунда назад
-						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
-						task.wait(1)
-						-- 1 секунда налево
-						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
-						task.wait(1)
-						-- 1 секунду направо
-						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
-						task.wait(1)
-					else
-						task.wait(0.5)
-					end
-				end
-				-- Останавливаем когда Ransom закончился
-				if Humanoid then
-					Humanoid:Move(Vector3.zero, RootPart)
-				end
-			end)
+			task.spawn(RansomWalk)
 		end
 	end)
 
+	-- Conn 2: запасной, если Ransom заспавнится в Workspace
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
-			task.spawn(function()
-				while Child.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
-						task.wait(1)
-						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
-						task.wait(1)
-						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
-						task.wait(1)
-						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
-						task.wait(1)
-					else
-						task.wait(0.5)
-					end
-				end
-				if Humanoid then
-					Humanoid:Move(Vector3.zero, RootPart)
-				end
-			end)
+			task.spawn(RansomWalk)
 		end
 	end)
+
+	-- Проверяем, не активен ли Ransom прямо сейчас (если toggle включили позже)
+	for _, Desc in PlayerGui:GetDescendants() do
+		local Name = string.lower(Desc.Name)
+		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
+			task.spawn(RansomWalk)
+			break
+		end
+	end
 end)
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
@@ -3900,20 +3896,20 @@ Functions.HandleObject = function(Object)
 			task.spawn(function()
 				while Object.Parent and Toggles.AutoRansomTrigger.Value do
 					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
+						Humanoid:Move(RootPart.CFrame.LookVector)
 						task.wait(1)
-						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
+						Humanoid:Move(-RootPart.CFrame.LookVector)
 						task.wait(1)
-						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
+						Humanoid:Move(-RootPart.CFrame.RightVector)
 						task.wait(1)
-						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
+						Humanoid:Move(RootPart.CFrame.RightVector)
 						task.wait(1)
 					else
 						task.wait(0.5)
 					end
 				end
 				if Humanoid then
-					Humanoid:Move(Vector3.zero, RootPart)
+					Humanoid:Move(Vector3.zero)
 				end
 			end)
 		end
