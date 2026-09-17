@@ -1431,55 +1431,41 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomTriggerConn2:Disconnect()
 			Globals.RansomTriggerConn2 = nil
 		end
-		-- Отжимаем все клавиши
-		pcall(function()
-			if keyrelease then
-				keyrelease(0x57) keyrelease(0x53) keyrelease(0x41) keyrelease(0x44)
-			end
-		end)
-		pcall(function()
-			local VIM = game:GetService("VirtualInputManager")
-			VIM:SendKeyEvent(false, Enum.KeyCode.W, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.S, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.A, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.D, false)
-		end)
+		if Globals.RansomHeartbeatConn then
+			Globals.RansomHeartbeatConn:Disconnect()
+			Globals.RansomHeartbeatConn = nil
+		end
 		return
 	end
 
-	local function pressKey(code, keyCode)
-		pcall(function() if keypress then keypress(code) end end)
-		pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(true, keyCode, false) end)
-	end
-
-	local function releaseKey(code, keyCode)
-		pcall(function() if keyrelease then keyrelease(code) end end)
-		pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false, keyCode, false) end)
-	end
-
 	local function RansomWalk()
-		local keys = {
-			{ hex = 0x57, enum = Enum.KeyCode.W }, -- W
-			{ hex = 0x53, enum = Enum.KeyCode.S }, -- S
-			{ hex = 0x41, enum = Enum.KeyCode.A }, -- A
-			{ hex = 0x44, enum = Enum.KeyCode.D }, -- D
+		if Globals.RansomHeartbeatConn then
+			Globals.RansomHeartbeatConn:Disconnect()
+		end
+
+		local directions = {
+			Vector3.new(0, 0, -1),  -- вперёд
+			Vector3.new(0, 0, 1),   -- назад
+			Vector3.new(-1, 0, 0),  -- налево
+			Vector3.new(1, 0, 0),   -- направо
 		}
 		local idx = 1
-		while Toggles.AutoRansomTrigger.Value do
-			local cur = keys[idx]
-			local prev = keys[idx == 1 and 4 or idx - 1]
-			-- Отжимаем предыдущую
-			releaseKey(prev.hex, prev.enum)
-			task.wait(0.05)
-			-- Нажимаем текущую
-			pressKey(cur.hex, cur.enum)
-			task.wait(1)
-			idx = idx == 4 and 1 or idx + 1
-		end
-		-- Отжимаем всё
-		for _, k in keys do
-			releaseKey(k.hex, k.enum)
-		end
+		local startTime = tick()
+
+		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
+			if not Toggles.AutoRansomTrigger.Value then return end
+			if Character:GetAttribute("Hiding") then return end
+			if not Humanoid or not RootPart then return end
+
+			-- Меняем направление каждую секунду
+			local elapsed = tick() - startTime
+			idx = (math.floor(elapsed) % 4) + 1
+
+			-- Двигаем RootPart напрямую
+			local dir = directions[idx]
+			local moveVector = RootPart.CFrame:VectorToWorldSpace(dir)
+			RootPart.CFrame = RootPart.CFrame + moveVector * 0.5
+		end)
 	end
 
 	-- Conn 1: слушаем PlayerGui
@@ -1488,7 +1474,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			task.spawn(RansomWalk)
+			RansomWalk()
 		end
 	end)
 
@@ -1496,7 +1482,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
-			task.spawn(RansomWalk)
+			RansomWalk()
 		end
 	end)
 
@@ -1504,7 +1490,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 	for _, Desc in PlayerGui:GetDescendants() do
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			task.spawn(RansomWalk)
+			RansomWalk()
 			break
 		end
 	end
@@ -3915,33 +3901,30 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Entities, Object)
 		if Toggles.AutoRansomTrigger.Value then
 			task.spawn(function()
-				local keys = {
-					{ hex = 0x57, enum = Enum.KeyCode.W },
-					{ hex = 0x53, enum = Enum.KeyCode.S },
-					{ hex = 0x41, enum = Enum.KeyCode.A },
-					{ hex = 0x44, enum = Enum.KeyCode.D },
+				if Globals.RansomHeartbeatConn then
+					Globals.RansomHeartbeatConn:Disconnect()
+				end
+				local directions = {
+					Vector3.new(0, 0, -1),
+					Vector3.new(0, 0, 1),
+					Vector3.new(-1, 0, 0),
+					Vector3.new(1, 0, 0),
 				}
-				local function pressKey(k)
-					pcall(function() if keypress then keypress(k.hex) end end)
-					pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(true, k.enum, false) end)
-				end
-				local function releaseKey(k)
-					pcall(function() if keyrelease then keyrelease(k.hex) end end)
-					pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false, k.enum, false) end)
-				end
-				local idx = 1
-				while Object.Parent and Toggles.AutoRansomTrigger.Value do
-					local cur = keys[idx]
-					local prev = keys[idx == 1 and 4 or idx - 1]
-					releaseKey(prev)
-					task.wait(0.05)
-					pressKey(cur)
-					task.wait(1)
-					idx = idx == 4 and 1 or idx + 1
-				end
-				for _, k in keys do
-					releaseKey(k)
-				end
+				local startTime = tick()
+				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
+					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
+						Globals.RansomHeartbeatConn:Disconnect()
+						Globals.RansomHeartbeatConn = nil
+						return
+					end
+					if Character:GetAttribute("Hiding") then return end
+					if not Humanoid or not RootPart then return end
+					local elapsed = tick() - startTime
+					local idx = (math.floor(elapsed) % 4) + 1
+					local dir = directions[idx]
+					local moveVector = RootPart.CFrame:VectorToWorldSpace(dir)
+					RootPart.CFrame = RootPart.CFrame + moveVector * 0.5
+				end)
 			end)
 		end
 	elseif Name == "GrumbleRig" then
