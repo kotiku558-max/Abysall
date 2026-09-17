@@ -151,7 +151,6 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
-
 }
 
 local EntityIcons = {
@@ -658,6 +657,7 @@ FakeEvents.Screech_Real = RemotesFolder:WaitForChild("Screech")
 FakeEvents.Shade_Real   = RemotesFolder:WaitForChild("ShadeResult")
 FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
+
 
 
 Globals.FogInstances = {}
@@ -1300,7 +1300,6 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassSeekingWall",    { Text = "Bypass Se
 Groupboxes.Exploits_Bypass:AddToggle("BypassSnare",          { Text = "Bypass Snare",            Default = false, Tooltip = "Prevents 'Snare' from trapping you." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Banana",           Default = false, Tooltip = "Prevents 'Banana Peel' from slipping you up (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
-Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",       { Text = "Bypass Drones",          Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
 
 Toggles.BypassGiggle:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
@@ -1410,28 +1409,7 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
-Toggles.BypassDrones:OnChanged(function(Value)
-	for _, Object in Objects.Entities do
-		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
-			for _, Part in Object:GetDescendants() do
-				if Part:IsA("BasePart") then
-					Part.CanTouch = not Value
-					Part.CanCollide = false
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch == Value then
-							Part.CanTouch = not Value
-						end
-					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide == true then
-							Part.CanCollide = false
-						end
-					end)
-				end
-			end
-		end
-	end
-end)
+
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
@@ -2006,8 +1984,6 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
 				Label = "Stardust Pile"
-			elseif Object.Name == "HoneyPot" then
-				Label = "Honey Pot [500]"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -3691,7 +3667,7 @@ Functions.HandleObject = function(Object)
 	elseif Name == "MouseHole" then
 		if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
 		table.insert(Objects.Chests, Object)
-	elseif ItemNames[Name] and Name ~= "HoneyPot" and Object:FindFirstChild("ModulePrompt") then
+	elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
 		if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
 		if Name == "LotusHolder" or Name == "LotusPetalPickup" then
 			Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3717,9 +3693,6 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Currency, Object)
 	elseif Name == "StardustPickup" then
 		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Stardust Pile", Color = Options.CurrencyESPColor.Value }, true) end
-		table.insert(Objects.Currency, Object)
-	elseif Name == "HoneyPot" then
-		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Honey Pot [500]", Color = Options.CurrencyESPColor.Value }, true) end
 		table.insert(Objects.Currency, Object)
 	elseif Name == "GiggleCeiling" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Giggle"] then Functions.AddESP({ Object = Object, Text = "Giggle", Color = Options.EntityESPColor.Value }, true) end
@@ -4258,7 +4231,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
 	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup" or Prompt.Parent.Name == "HoneyPot") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
 		local BPack = Functions.HasItem("BandagePack")
@@ -4461,41 +4434,7 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 			end
 		end
 		table.insert(Objects.Entities, Entity)
-		if (Entity.Name == "Drones" or Entity.Name == "DronesStampede") and Toggles.BypassDrones.Value then
-			for _, Part in Entity:GetDescendants() do
-				if Part:IsA("BasePart") then
-					Part.CanTouch = false
-					Part.CanCollide = false
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch == true then Part.CanTouch = false end
-					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide == true then Part.CanCollide = false end
-					end)
-					Entity.Destroying:Once(function()
-						Conn1:Disconnect()
-						Conn2:Disconnect()
-					end)
-				end
-			end
-			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
-				if Part:IsA("BasePart") then
-					Part.CanTouch = false
-					Part.CanCollide = false
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch == true then Part.CanTouch = false end
-					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide == true then Part.CanCollide = false end
-					end)
-					Entity.Destroying:Once(function()
-						Conn1:Disconnect()
-						Conn2:Disconnect()
-					end)
-				end
-			end)
-			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
-		end
+
 	end
 
 	if RusherAliases[EntityData.Alias] then
@@ -4622,10 +4561,7 @@ Library:OnUnload(function()
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
 	end
-	if	end
-	if	end
-	if	end
-	if	end
+
 
 	Globals.SeekNodesFolder:Destroy()
 	Globals.RoomsNodesFolder:Destroy()
