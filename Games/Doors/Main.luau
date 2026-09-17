@@ -1422,7 +1422,6 @@ Toggles.BypassJeff:OnChanged(function(Value)
 	end
 end)
 Toggles.AutoRansomTrigger:OnChanged(function(Value)
-	-- Отключаем старые коннекты при выключении тогла
 	if not Value then
 		if Globals.RansomTriggerConn then
 			Globals.RansomTriggerConn:Disconnect()
@@ -1436,27 +1435,33 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 	end
 
 	-- Conn 1: слушаем появление UI-элементов Ransom в PlayerGui
+	-- Это ОСНОВНОЙ слушатель, т.к. Ransom — экранная сущность
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
 			task.spawn(function()
-				-- Ждём появления стоп-знака, затем двигаем камеру
 				task.wait(0.3)
-				if Camera and Toggles.AutoRansomTrigger.Value then
-					local Orig = Camera.CFrame
-					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
-					task.wait(0.1)
-					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
-					task.wait(0.1)
-					Camera.CFrame = Orig
+				-- Постоянный цикл, пока Ransom UI активен
+				while Desc.Parent and Toggles.AutoRansomTrigger.Value do
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
+						local Orig = Camera.CFrame
+						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
+						task.wait(0.1)
+						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
+						task.wait(0.1)
+						Camera.CFrame = Orig
+						task.wait(0.3)
+					else
+						task.wait(0.5)
+					end
 				end
 			end)
 		end
 	end)
 
-	-- Conn 2: слушаем спавн сущности Ransom в Workspace
+	-- Conn 2: запасной слушатель Workspace (на случай если Ransom всё же заспавнится там)
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
@@ -3882,23 +3887,6 @@ Functions.HandleObject = function(Object)
 			Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
 		end
 		table.insert(Objects.Entities, Object)
-		if Toggles.AutoRansomTrigger.Value then
-			task.spawn(function()
-				while Object.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
-						local Orig = Camera.CFrame
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig
-						task.wait(0.3)
-					else
-						task.wait(0.5)
-					end
-				end
-			end)
-		end
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
