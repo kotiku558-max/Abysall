@@ -1457,6 +1457,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				-RootPart.CFrame.RightVector,
 				RootPart.CFrame.RightVector,
 			}
+			RootPart.AssemblyLinearVelocity = dirs[idx] * 30
 			RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
 		end)
 	end
@@ -1467,9 +1468,11 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
 		end
+		if RootPart then
+			RootPart.AssemblyLinearVelocity = Vector3.zero
+		end
 	end
 
-	-- Conn 1: слушаем PlayerGui — ТОЛЬКО точное имя "Ransom"
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
@@ -1484,7 +1487,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		end
 	end)
 
-	-- Conn 2: Workspace
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
@@ -3924,6 +3926,7 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
+					RootPart.AssemblyLinearVelocity = dirs[idx] * 30
 					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
 				end)
 			end
@@ -4686,6 +4689,10 @@ Library:OnUnload(function()
 	if Globals.RansomTriggerConn2 then
 		Globals.RansomTriggerConn2:Disconnect()
 		Globals.RansomTriggerConn2 = nil
+	end
+	if Globals.RansomHeartbeatConn then
+		Globals.RansomHeartbeatConn:Disconnect()
+		Globals.RansomHeartbeatConn = nil
 	end
 
 	Globals.SeekNodesFolder:Destroy()
