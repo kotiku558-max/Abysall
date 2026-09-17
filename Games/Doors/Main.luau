@@ -1435,7 +1435,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn = nil
 		end
 		Globals.RansomActive = false
-		-- Возвращаем фейковый remote
 		if Globals.RealFootstepRemote then
 			Globals.RealFootstepRemote.Parent = nil
 		end
@@ -1447,28 +1446,17 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 
 	Globals.RansomActive = false
 
-	local function RestoreRealFootsteps()
+	local function StartWalk()
+		if Globals.RansomHeartbeatConn then return end
+		-- Восстанавливаем настоящий footstep remote
 		if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
 			if Globals.FakeFootstepRemote then
 				Globals.FakeFootstepRemote.Parent = nil
 			end
 			Globals.RealFootstepRemote.Parent = RemotesFolder
 		end
-	end
-
-	local function RestoreFakeFootsteps()
-		if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
-			Globals.RealFootstepRemote.Parent = nil
-		end
-		if Globals.FakeFootstepRemote and not Globals.FakeFootstepRemote.Parent then
-			Globals.FakeFootstepRemote.Parent = RemotesFolder
-		end
-	end
-
-	local function StartWalk()
-		if Globals.RansomHeartbeatConn then return end
-		RestoreRealFootsteps()
 		local startTime = tick()
+		local lastStep = 0
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
 			if not Globals.RansomActive then return end
@@ -1483,7 +1471,19 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				RootPart.CFrame.RightVector,
 			}
 			local dir = dirs[idx]
-			Humanoid:Move(dir)
+			-- Двигаем RootPart напрямую (обходит контрольный скрипт)
+			RootPart.CFrame = RootPart.CFrame + dir * 0.15
+			-- Задаём скорость (сервер видит движение)
+			RootPart.AssemblyLinearVelocity = dir * 16
+			-- Вручную вызываем footstep remote каждые 0.4 сек
+			if tick() - lastStep > 0.4 then
+				lastStep = tick()
+				if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
+					pcall(function()
+						Globals.RealFootstepRemote:FireServer()
+					end)
+				end
+			end
 		end)
 	end
 
@@ -1493,10 +1493,16 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
 		end
-		if Humanoid then
-			Humanoid:Move(Vector3.zero)
+		if RootPart then
+			RootPart.AssemblyLinearVelocity = Vector3.zero
 		end
-		RestoreFakeFootsteps()
+		-- Возвращаем фейковый remote
+		if Globals.RealFootstepRemote then
+			Globals.RealFootstepRemote.Parent = nil
+		end
+		if Globals.FakeFootstepRemote then
+			Globals.FakeFootstepRemote.Parent = RemotesFolder
+		end
 	end
 
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -2746,6 +2752,10 @@ if Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallme
         if Property == "MoveDirection" and Self == Humanoid and Globals.RoomsAutoWalkActive and Toggles.RoomsAutoWalkSpoofFootsteps.Value and Floor == "Rooms" and not Character:GetAttribute("Hiding") then
             return RootPart.CFrame.LookVector
         end
+
+        if Property == "MoveDirection" and Self == Humanoid and Globals.RansomActive and not Character:GetAttribute("Hiding") then
+            return RootPart.CFrame.LookVector
+        end
         
         return Real
     end))
@@ -3932,22 +3942,23 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Entities, Object)
 		if Toggles.AutoRansomTrigger.Value then
 			Globals.RansomActive = true
-			-- Восстанавливаем настоящий footstep remote
-			if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
-				if Globals.FakeFootstepRemote then
-					Globals.FakeFootstepRemote.Parent = nil
-				end
-				Globals.RealFootstepRemote.Parent = RemotesFolder
-			end
 			if not Globals.RansomHeartbeatConn then
+				if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
+					if Globals.FakeFootstepRemote then
+						Globals.FakeFootstepRemote.Parent = nil
+					end
+					Globals.RealFootstepRemote.Parent = RemotesFolder
+				end
 				local startTime = tick()
+				local lastStep = 0
 				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
 						Globals.RansomActive = false
 						Globals.RansomHeartbeatConn:Disconnect()
 						Globals.RansomHeartbeatConn = nil
-						if Humanoid then Humanoid:Move(Vector3.zero) end
-						-- Возвращаем фейковый remote
+						if RootPart then
+							RootPart.AssemblyLinearVelocity = Vector3.zero
+						end
 						if Globals.RealFootstepRemote then
 							Globals.RealFootstepRemote.Parent = nil
 						end
@@ -3967,7 +3978,17 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
-					Humanoid:Move(dirs[idx])
+					local dir = dirs[idx]
+					RootPart.CFrame = RootPart.CFrame + dir * 0.15
+					RootPart.AssemblyLinearVelocity = dir * 16
+					if tick() - lastStep > 0.4 then
+						lastStep = tick()
+						if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
+							pcall(function()
+								Globals.RealFootstepRemote:FireServer()
+							end)
+						end
+					end
 				end)
 			end
 		end
