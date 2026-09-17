@@ -1441,15 +1441,22 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
 			task.spawn(function()
 				task.wait(0.3)
-				-- Постоянный цикл, пока UI-элемент Ransom существует
 				while Desc.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
-						local Orig = Camera.CFrame
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
+						local Pos = RootPart.Position
+						local Look = RootPart.CFrame.LookVector
+						local Right = RootPart.CFrame.RightVector
+						-- Вперёд
+						Humanoid:MoveTo(Pos + Look * 4)
+						task.wait(0.3)
+						-- Вправо
+						Humanoid:MoveTo(Pos + Right * 4)
+						task.wait(0.3)
+						-- Назад
+						Humanoid:MoveTo(Pos - Look * 4)
+						task.wait(0.3)
+						-- Влево
+						Humanoid:MoveTo(Pos - Right * 4)
 						task.wait(0.3)
 					else
 						task.wait(0.5)
@@ -1464,13 +1471,17 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if Child.Name == "Ransom" then
 			task.spawn(function()
 				while Child.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
-						local Orig = Camera.CFrame
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
-						task.wait(0.1)
-						Camera.CFrame = Orig
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
+						local Pos = RootPart.Position
+						local Look = RootPart.CFrame.LookVector
+						local Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos + Look * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos + Right * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos - Look * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos - Right * 4)
 						task.wait(0.3)
 					else
 						task.wait(0.5)
@@ -3884,6 +3895,27 @@ Functions.HandleObject = function(Object)
 			Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
 		end
 		table.insert(Objects.Entities, Object)
+		if Toggles.AutoRansomTrigger.Value then
+			task.spawn(function()
+				while Object.Parent and Toggles.AutoRansomTrigger.Value do
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
+						local Pos = RootPart.Position
+						local Look = RootPart.CFrame.LookVector
+						local Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos + Look * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos + Right * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos - Look * 4)
+						task.wait(0.3)
+						Humanoid:MoveTo(Pos - Right * 4)
+						task.wait(0.3)
+					else
+						task.wait(0.5)
+					end
+				end
+			end)
+		end
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
