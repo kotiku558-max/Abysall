@@ -1310,6 +1310,7 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassSeekingWall",    { Text = "Bypass Se
 Groupboxes.Exploits_Bypass:AddToggle("BypassSnare",          { Text = "Bypass Snare",            Default = false, Tooltip = "Prevents 'Snare' from trapping you." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Banana",           Default = false, Tooltip = "Prevents 'Banana Peel' from slipping you up (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
+Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",       { Text = "Bypass Drones",          Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
 Groupboxes.Exploits_Bypass:AddToggle("AutoRansomTrigger",   { Text = "Auto Ransom Trigger",     Default = false, Tooltip = "Automatically moves and rotates camera to trigger the Ransom quest." })
 
 Toggles.BypassGiggle:OnChanged(function(Value)
@@ -1417,6 +1418,15 @@ Toggles.BypassJeff:OnChanged(function(Value)
 				end
 			end
 			Object:WaitForChild("Humanoid").Health = 0
+		end
+	end
+end)
+Toggles.BypassDrones:OnChanged(function(Value)
+	for _, Object in Objects.Entities do
+		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
+			for _, Part in Object:GetDescendants() do
+				if Part:IsA("BasePart") then Part.CanTouch = not Value end
+			end
 		end
 	end
 end)
@@ -2100,8 +2110,6 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
 				Label = "Stardust Pile"
-			elseif Object.Name == "HoneyPot" then
-				Label = "Honey Pot [500]"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -3785,7 +3793,7 @@ Functions.HandleObject = function(Object)
 	elseif Name == "MouseHole" then
 		if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
 		table.insert(Objects.Chests, Object)
-	elseif ItemNames[Name] and Name ~= "HoneyPot" and Object:FindFirstChild("ModulePrompt") then
+	elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
 		if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
 		if Name == "LotusHolder" or Name == "LotusPetalPickup" then
 			Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3811,9 +3819,6 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Currency, Object)
 	elseif Name == "StardustPickup" then
 		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Stardust Pile", Color = Options.CurrencyESPColor.Value }, true) end
-		table.insert(Objects.Currency, Object)
-	elseif Name == "HoneyPot" then
-		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Honey Pot [500]", Color = Options.CurrencyESPColor.Value }, true) end
 		table.insert(Objects.Currency, Object)
 	elseif Name == "GiggleCeiling" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Giggle"] then Functions.AddESP({ Object = Object, Text = "Giggle", Color = Options.EntityESPColor.Value }, true) end
@@ -4190,7 +4195,7 @@ local AllowedInstances = {
 	LiveBreakerPolePickup=true, LeverForGate=true, GloomPile=true, SeekFloodline=true, Door=true,
 	Green_Herb=true, Bridge=true, MouseHole=true, BananaPeel=true, NannerPeel=true, PowerupPad=true,
 	IndustrialGate=true, CollisionFloor=true, ElevatorCar=true, Wax_Door=true, ThingToOpen=true,
-	MovingDoor=true, StardustPickup=true, HoneyPot=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
+	MovingDoor=true, StardustPickup=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
@@ -4398,7 +4403,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
 	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup" or Prompt.Parent.Name == "HoneyPot") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
 		local BPack = Functions.HasItem("BandagePack")
@@ -4601,6 +4606,15 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 			end
 		end
 		table.insert(Objects.Entities, Entity)
+		if (Entity.Name == "Drones" or Entity.Name == "DronesStampede") and Toggles.BypassDrones.Value then
+			for _, Part in Entity:GetDescendants() do
+				if Part:IsA("BasePart") then Part.CanTouch = false end
+			end
+			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
+				if Part:IsA("BasePart") then Part.CanTouch = false end
+			end)
+			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
+		end
 	end
 
 	if RusherAliases[EntityData.Alias] then
