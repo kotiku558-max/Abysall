@@ -1434,8 +1434,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		return
 	end
 
-	-- Conn 1: слушаем появление UI-элементов Ransom в PlayerGui
-	-- Это ОСНОВНОЙ слушатель, т.к. Ransom — экранная сущность
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
@@ -1443,7 +1441,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
 			task.spawn(function()
 				task.wait(0.3)
-				-- Постоянный цикл, пока Ransom UI активен
+				-- Постоянный цикл, пока UI-элемент Ransom существует
 				while Desc.Parent and Toggles.AutoRansomTrigger.Value do
 					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
 						local Orig = Camera.CFrame
@@ -1461,7 +1459,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		end
 	end)
 
-	-- Conn 2: запасной слушатель Workspace (на случай если Ransom всё же заспавнится там)
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
