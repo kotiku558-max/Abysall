@@ -1431,37 +1431,58 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomTriggerConn2:Disconnect()
 			Globals.RansomTriggerConn2 = nil
 		end
-		if Humanoid then
-			Humanoid:Move(Vector3.zero)
-		end
+		-- Отжимаем все клавиши
+		pcall(function()
+			if keyrelease then
+				keyrelease(0x57) keyrelease(0x53) keyrelease(0x41) keyrelease(0x44)
+			end
+		end)
+		pcall(function()
+			local VIM = game:GetService("VirtualInputManager")
+			VIM:SendKeyEvent(false, Enum.KeyCode.W, false)
+			VIM:SendKeyEvent(false, Enum.KeyCode.S, false)
+			VIM:SendKeyEvent(false, Enum.KeyCode.A, false)
+			VIM:SendKeyEvent(false, Enum.KeyCode.D, false)
+		end)
 		return
 	end
 
+	local function pressKey(code, keyCode)
+		pcall(function() if keypress then keypress(code) end end)
+		pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(true, keyCode, false) end)
+	end
+
+	local function releaseKey(code, keyCode)
+		pcall(function() if keyrelease then keyrelease(code) end end)
+		pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false, keyCode, false) end)
+	end
+
 	local function RansomWalk()
+		local keys = {
+			{ hex = 0x57, enum = Enum.KeyCode.W }, -- W
+			{ hex = 0x53, enum = Enum.KeyCode.S }, -- S
+			{ hex = 0x41, enum = Enum.KeyCode.A }, -- A
+			{ hex = 0x44, enum = Enum.KeyCode.D }, -- D
+		}
+		local idx = 1
 		while Toggles.AutoRansomTrigger.Value do
-			if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-				-- 1 секунда вперёд
-				Humanoid:Move(RootPart.CFrame.LookVector)
-				task.wait(1)
-				-- 1 секунда назад
-				Humanoid:Move(-RootPart.CFrame.LookVector)
-				task.wait(1)
-				-- 1 секунда налево
-				Humanoid:Move(-RootPart.CFrame.RightVector)
-				task.wait(1)
-				-- 1 секунду направо
-				Humanoid:Move(RootPart.CFrame.RightVector)
-				task.wait(1)
-			else
-				task.wait(0.5)
-			end
+			local cur = keys[idx]
+			local prev = keys[idx == 1 and 4 or idx - 1]
+			-- Отжимаем предыдущую
+			releaseKey(prev.hex, prev.enum)
+			task.wait(0.05)
+			-- Нажимаем текущую
+			pressKey(cur.hex, cur.enum)
+			task.wait(1)
+			idx = idx == 4 and 1 or idx + 1
 		end
-		if Humanoid then
-			Humanoid:Move(Vector3.zero)
+		-- Отжимаем всё
+		for _, k in keys do
+			releaseKey(k.hex, k.enum)
 		end
 	end
 
-	-- Conn 1: слушаем PlayerGui (Ransom — экранная сущность)
+	-- Conn 1: слушаем PlayerGui
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
@@ -1471,7 +1492,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		end
 	end)
 
-	-- Conn 2: запасной, если Ransom заспавнится в Workspace
+	-- Conn 2: Workspace
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
@@ -1479,7 +1500,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		end
 	end)
 
-	-- Проверяем, не активен ли Ransom прямо сейчас (если toggle включили позже)
+	-- Проверяем, не активен ли Ransom уже
 	for _, Desc in PlayerGui:GetDescendants() do
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
@@ -3894,22 +3915,32 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Entities, Object)
 		if Toggles.AutoRansomTrigger.Value then
 			task.spawn(function()
-				while Object.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						Humanoid:Move(RootPart.CFrame.LookVector)
-						task.wait(1)
-						Humanoid:Move(-RootPart.CFrame.LookVector)
-						task.wait(1)
-						Humanoid:Move(-RootPart.CFrame.RightVector)
-						task.wait(1)
-						Humanoid:Move(RootPart.CFrame.RightVector)
-						task.wait(1)
-					else
-						task.wait(0.5)
-					end
+				local keys = {
+					{ hex = 0x57, enum = Enum.KeyCode.W },
+					{ hex = 0x53, enum = Enum.KeyCode.S },
+					{ hex = 0x41, enum = Enum.KeyCode.A },
+					{ hex = 0x44, enum = Enum.KeyCode.D },
+				}
+				local function pressKey(k)
+					pcall(function() if keypress then keypress(k.hex) end end)
+					pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(true, k.enum, false) end)
 				end
-				if Humanoid then
-					Humanoid:Move(Vector3.zero)
+				local function releaseKey(k)
+					pcall(function() if keyrelease then keyrelease(k.hex) end end)
+					pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false, k.enum, false) end)
+				end
+				local idx = 1
+				while Object.Parent and Toggles.AutoRansomTrigger.Value do
+					local cur = keys[idx]
+					local prev = keys[idx == 1 and 4 or idx - 1]
+					releaseKey(prev)
+					task.wait(0.05)
+					pressKey(cur)
+					task.wait(1)
+					idx = idx == 4 and 1 or idx + 1
+				end
+				for _, k in keys do
+					releaseKey(k)
 				end
 			end)
 		end
