@@ -1443,30 +1443,25 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				task.wait(0.3)
 				while Desc.Parent and Toggles.AutoRansomTrigger.Value do
 					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						local Pos = RootPart.Position
-						local Look = RootPart.CFrame.LookVector
-						local Right = RootPart.CFrame.RightVector
 						-- 1 секунда вперёд
-						Humanoid:MoveTo(Pos + Look * 6)
+						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
 						task.wait(1)
 						-- 1 секунда назад
-						Pos = RootPart.Position
-						Look = RootPart.CFrame.LookVector
-						Humanoid:MoveTo(Pos - Look * 6)
+						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
 						task.wait(1)
 						-- 1 секунда налево
-						Pos = RootPart.Position
-						Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos - Right * 6)
+						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
 						task.wait(1)
 						-- 1 секунду направо
-						Pos = RootPart.Position
-						Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos + Right * 6)
+						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
 						task.wait(1)
 					else
 						task.wait(0.5)
 					end
+				end
+				-- Останавливаем когда Ransom закончился
+				if Humanoid then
+					Humanoid:Move(Vector3.zero, RootPart)
 				end
 			end)
 		end
@@ -1478,31 +1473,54 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			task.spawn(function()
 				while Child.Parent and Toggles.AutoRansomTrigger.Value do
 					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
-						local Pos = RootPart.Position
-						local Look = RootPart.CFrame.LookVector
-						local Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos + Look * 6)
+						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
 						task.wait(1)
-						Pos = RootPart.Position
-						Look = RootPart.CFrame.LookVector
-						Humanoid:MoveTo(Pos - Look * 6)
+						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
 						task.wait(1)
-						Pos = RootPart.Position
-						Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos - Right * 6)
+						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
 						task.wait(1)
-						Pos = RootPart.Position
-						Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos + Right * 6)
+						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
 						task.wait(1)
 					else
 						task.wait(0.5)
 					end
 				end
+				if Humanoid then
+					Humanoid:Move(Vector3.zero, RootPart)
+				end
 			end)
 		end
 	end)
 end)
+И в блоке elseif Name == "Ransom" в EntityHandler тоже замени:
+
+lua
+	elseif Name == "Ransom" then
+		if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
+			Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
+		end
+		table.insert(Objects.Entities, Object)
+		if Toggles.AutoRansomTrigger.Value then
+			task.spawn(function()
+				while Object.Parent and Toggles.AutoRansomTrigger.Value do
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart then
+						Humanoid:Move(Vector3.new(0, 0, -1), RootPart)
+						task.wait(1)
+						Humanoid:Move(Vector3.new(0, 0, 1), RootPart)
+						task.wait(1)
+						Humanoid:Move(Vector3.new(-1, 0, 0), RootPart)
+						task.wait(1)
+						Humanoid:Move(Vector3.new(1, 0, 0), RootPart)
+						task.wait(1)
+					else
+						task.wait(0.5)
+					end
+				end
+				if Humanoid then
+					Humanoid:Move(Vector3.zero, RootPart)
+				end
+			end)
+		end
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
