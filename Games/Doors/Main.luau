@@ -1411,12 +1411,26 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
-Toggles.AutoRansomTrigger:OnChanged(function(Value)
-	if not Value and Globals.RansomTriggerConn then
-		Globals.RansomTriggerConn:Disconnect()
-		Globals.RansomTriggerConn = nil
+if Toggles.AutoRansomTrigger.Value then
+		local PlayerGui = Player:WaitForChild("PlayerGui")
+		Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
+			if not Toggles.AutoRansomTrigger.Value then return end
+			local Name = string.lower(Desc.Name)
+			if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
+				task.spawn(function()
+					task.wait(0.3)
+					if Camera and Toggles.AutoRansomTrigger.Value then
+						local Orig = Camera.CFrame
+						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
+						task.wait(0.1)
+						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
+						task.wait(0.1)
+						Camera.CFrame = Orig
+					end
+				end)
+			end
+		end)
 	end
-end)
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
@@ -4601,6 +4615,14 @@ Library:OnUnload(function()
 	if FakeEvents.Surge_Real then
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
+	end
+	if Globals.RansomTriggerConn then
+		Globals.RansomTriggerConn:Disconnect()
+		Globals.RansomTriggerConn = nil
+	end
+	if Globals.RansomTriggerConn2 then
+		Globals.RansomTriggerConn2:Disconnect()
+		Globals.RansomTriggerConn2 = nil
 	end
 
 	Globals.SeekNodesFolder:Destroy()
