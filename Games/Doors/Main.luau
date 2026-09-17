@@ -3899,28 +3899,6 @@ Functions.HandleObject = function(Object)
 			end
 		end)
 	end
-	elseif Name == "Ransom" then
-	if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
-		Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
-	end
-	table.insert(Objects.Entities, Object)
-	if Toggles.AutoRansomTrigger.Value then
-		task.spawn(function()
-			while Object.Parent and Toggles.AutoRansomTrigger.Value do
-				if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
-					local Orig = Camera.CFrame
-					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
-					task.wait(0.1)
-					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
-					task.wait(0.1)
-					Camera.CFrame = Orig
-					task.wait(0.3)
-				else
-					task.wait(0.5)
-				end
-			end
-		end)
-	end
 
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
