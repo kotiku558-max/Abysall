@@ -1484,9 +1484,11 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				RootPart.CFrame.RightVector,
 			}
 			local dir = dirs[idx]
+			-- Прямое перемещение (обходит контрольный скрипт Roblox)
 			RootPart.CFrame = RootPart.CFrame + dir * 0.15
+			-- Скорость для сервера
 			RootPart.AssemblyLinearVelocity = dir * 16
-			Humanoid:Move(dir)
+			-- Шаги на сервер (Ransom считает именно шаги)
 			if tick() - lastStep > 0.4 then
 				lastStep = tick()
 				if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
@@ -3992,7 +3994,6 @@ Functions.HandleObject = function(Object)
 					local dir = dirs[idx]
 					RootPart.CFrame = RootPart.CFrame + dir * 0.15
 					RootPart.AssemblyLinearVelocity = dir * 16
-					Humanoid:Move(dir)
 					if tick() - lastStep > 0.4 then
 						lastStep = tick()
 						if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
