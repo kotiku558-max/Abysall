@@ -151,6 +151,10 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
+	["Ransom"] = {
+		Alias = "Ransom",
+		NotifyMessage = { Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught." }
+	},
 }
 
 local EntityIcons = {
@@ -174,6 +178,7 @@ local EntityIcons = {
 	["Scribbles"]       = "rbxassetid://12711591665",
 	["Drones"]          = "rbxassetid://6023426923",
 	["Alma"]             = "rbxassetid://6023426923",
+	["Ransom"]            = "rbxassetid://6023426923",
 	["DronesStampede"]  = "rbxassetid://6023426923"
 }
 
@@ -657,6 +662,13 @@ FakeEvents.Screech_Real = RemotesFolder:WaitForChild("Screech")
 FakeEvents.Shade_Real   = RemotesFolder:WaitForChild("ShadeResult")
 FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
+
+if RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed") then
+    Globals.RealFootstepRemote = RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed")
+    Globals.RealFootstepRemote.Parent = nil
+    Globals.FakeFootstepRemote = Instance.new("RemoteEvent", RemotesFolder)
+    Globals.FakeFootstepRemote.Name = "FootstepRemoteThatWeNeed"
+end
 
 Globals.FogInstances = {}
 Globals.OldFog = Services.Lighting.FogEnd
@@ -1298,7 +1310,8 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassSeekingWall",    { Text = "Bypass Se
 Groupboxes.Exploits_Bypass:AddToggle("BypassSnare",          { Text = "Bypass Snare",            Default = false, Tooltip = "Prevents 'Snare' from trapping you." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Banana",           Default = false, Tooltip = "Prevents 'Banana Peel' from slipping you up (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
-Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",         { Text = "Bypass Drones",            Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
+Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",       { Text = "Bypass Drones",          Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
+Groupboxes.Exploits_Bypass:AddToggle("AutoRansomTrigger",   { Text = "Auto Ransom Trigger",     Default = false, Tooltip = "Automatically moves and rotates camera to trigger the Ransom quest." })
 
 Toggles.BypassGiggle:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
@@ -1408,44 +1421,130 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
--- Bypass Drones: CanTouch + Health restore
 Toggles.BypassDrones:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
 		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
 			for _, Part in Object:GetDescendants() do
-				if Part:IsA("BasePart") then Part.CanTouch = not Value end
-			end
-		end
-	end
-end)
-
-local DroneHealthConn
-Toggles.BypassDrones:OnChanged(function(Value)
-	if Value then
-		DroneHealthConn = Services.RunService.Heartbeat:Connect(function()
-			if not Toggles.BypassDrones.Value then return end
-			if not Humanoid or not RootPart then return end
-			if Character:GetAttribute("Hiding") then return end
-			local droneNearby = false
-			for _, Object in Objects.Entities do
-				if Object.Name == "Drones" or Object.Name == "DronesStampede" then
-					if Object.PrimaryPart and (Object.PrimaryPart.Position - RootPart.Position).Magnitude < 35 then
-						droneNearby = true
-						break
-					end
+				if Part:IsA("BasePart") then
+					Part.CanTouch = not Value
+					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Toggles.BypassDrones.Value and Part.CanTouch then
+							Part.CanTouch = false
+						end
+					end)
+					table.insert(Connections, conn)
 				end
 			end
-			if droneNearby and Humanoid.Health < Humanoid.MaxHealth then
-				Humanoid.Health = Humanoid.MaxHealth
-			end
-		end)
-	else
-		if DroneHealthConn then
-			DroneHealthConn:Disconnect()
-			DroneHealthConn = nil
 		end
 	end
 end)
+Toggles.AutoRansomTrigger:OnChanged(function(Value)
+	if not Value then
+		if Globals.RansomTriggerConn then
+			Globals.RansomTriggerConn:Disconnect()
+			Globals.RansomTriggerConn = nil
+		end
+		if Globals.RansomTriggerConn2 then
+			Globals.RansomTriggerConn2:Disconnect()
+			Globals.RansomTriggerConn2 = nil
+		end
+		if Globals.RansomHeartbeatConn then
+			Globals.RansomHeartbeatConn:Disconnect()
+			Globals.RansomHeartbeatConn = nil
+		end
+		Globals.RansomActive = false
+		-- Возвращаем фейковый remote
+		if Globals.RealFootstepRemote then
+			Globals.RealFootstepRemote.Parent = nil
+		end
+		if Globals.FakeFootstepRemote then
+			Globals.FakeFootstepRemote.Parent = RemotesFolder
+		end
+		return
+	end
+
+	Globals.RansomActive = false
+
+	local function RestoreRealFootsteps()
+		if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
+			if Globals.FakeFootstepRemote then
+				Globals.FakeFootstepRemote.Parent = nil
+			end
+			Globals.RealFootstepRemote.Parent = RemotesFolder
+		end
+	end
+
+	local function RestoreFakeFootsteps()
+		if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
+			Globals.RealFootstepRemote.Parent = nil
+		end
+		if Globals.FakeFootstepRemote and not Globals.FakeFootstepRemote.Parent then
+			Globals.FakeFootstepRemote.Parent = RemotesFolder
+		end
+	end
+
+	local function StartWalk()
+		if Globals.RansomHeartbeatConn then return end
+		RestoreRealFootsteps()
+		local startTime = tick()
+		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
+			if not Toggles.AutoRansomTrigger.Value then return end
+			if not Globals.RansomActive then return end
+			if Character:GetAttribute("Hiding") then return end
+			if not Humanoid or not RootPart then return end
+			local elapsed = tick() - startTime
+			local idx = (math.floor(elapsed) % 4) + 1
+			local dirs = {
+				RootPart.CFrame.LookVector,
+				-RootPart.CFrame.LookVector,
+				-RootPart.CFrame.RightVector,
+				RootPart.CFrame.RightVector,
+			}
+			local dir = dirs[idx]
+			Humanoid:Move(dir)
+		end)
+	end
+
+	local function StopWalk()
+		Globals.RansomActive = false
+		if Globals.RansomHeartbeatConn then
+			Globals.RansomHeartbeatConn:Disconnect()
+			Globals.RansomHeartbeatConn = nil
+		end
+		if Humanoid then
+			Humanoid:Move(Vector3.zero)
+		end
+		RestoreFakeFootsteps()
+	end
+
+	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
+		if not Toggles.AutoRansomTrigger.Value then return end
+		if Desc.Name == "Ransom" then
+			Globals.RansomActive = true
+			StartWalk()
+			Desc.AncestryChanged:Connect(function(_, Parent)
+				if not Parent then
+					StopWalk()
+				end
+			end)
+		end
+	end)
+
+	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
+		if not Toggles.AutoRansomTrigger.Value then return end
+		if Child.Name == "Ransom" then
+			Globals.RansomActive = true
+			StartWalk()
+			Child.AncestryChanged:Connect(function(_, Parent)
+				if not Parent then
+					StopWalk()
+				end
+			end)
+		end
+	end)
+end)
+
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
 	Text = "Anticheat Bypass", Default = false,
@@ -2019,8 +2118,6 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
 				Label = "Stardust Pile"
-			elseif Object.Name == "HoneyPot" then
-				Label = "Honey Pot [500]"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -2724,6 +2821,67 @@ Functions.HandleCharacter = function(NewCharacter)
 
 	Globals.OldCamera = Camera
 	Globals.MainUI = LocalPlayer.PlayerGui.MainUI
+
+	-- Drone Bypass: Health protection (restore to PREVIOUS value, not max)
+	local DroneLastHealth = Humanoid.Health
+	Connections.DroneHealthProtect = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+		if not Toggles.BypassDrones then return end
+		if not Toggles.BypassDrones.Value then
+			DroneLastHealth = Humanoid.Health
+			return
+		end
+
+		local newHealth = Humanoid.Health
+		if newHealth < DroneLastHealth then
+			-- Health dropped, check if drone is near
+			local droneNear = false
+			for _, Entity in Objects.Entities do
+				if Entity.Name == "Drones" or Entity.Name == "DronesStampede" then
+					if Entity.PrimaryPart then
+						local dist = LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position)
+						if dist < 40 then
+							droneNear = true
+							break
+						end
+					end
+				end
+			end
+
+			if droneNear then
+				Humanoid.Health = DroneLastHealth
+			else
+				DroneLastHealth = newHealth
+			end
+		else
+			DroneLastHealth = newHealth
+		end
+	end)
+
+	-- Drone Bypass: Ragdoll prevention
+	Connections.DroneRagdollProtect = Services.RunService.Heartbeat:Connect(function()
+		if not Toggles.BypassDrones then return end
+		if not Toggles.BypassDrones.Value then return end
+		if not Humanoid or not RootPart then return end
+
+		local state = Humanoid:GetState()
+		if state == Enum.HumanoidStateType.Physics or state == Enum.HumanoidStateType.FallingDown then
+			local droneNear = false
+			for _, Entity in Objects.Entities do
+				if Entity.Name == "Drones" or Entity.Name == "DronesStampede" then
+					if Entity.PrimaryPart then
+						local dist = LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position)
+						if dist < 40 then
+							droneNear = true
+							break
+						end
+					end
+				end
+			end
+			if droneNear then
+				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+		end
+	end)
 
 	Collision = NewCharacter:WaitForChild("Collision")
 	CollisionPart  = NewCharacter:FindFirstChild("CollisionPart") or NewCharacter:FindFirstChild("Collision")
@@ -3704,7 +3862,7 @@ Functions.HandleObject = function(Object)
 	elseif Name == "MouseHole" then
 		if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
 		table.insert(Objects.Chests, Object)
-	elseif ItemNames[Name] and Name ~= "HoneyPot" and Object:FindFirstChild("ModulePrompt") then
+	elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
 		if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
 		if Name == "LotusHolder" or Name == "LotusPetalPickup" then
 			Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3730,9 +3888,6 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Currency, Object)
 	elseif Name == "StardustPickup" then
 		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Stardust Pile", Color = Options.CurrencyESPColor.Value }, true) end
-		table.insert(Objects.Currency, Object)
-	elseif Name == "HoneyPot" then
-		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Honey Pot [500]", Color = Options.CurrencyESPColor.Value }, true) end
 		table.insert(Objects.Currency, Object)
 	elseif Name == "GiggleCeiling" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Giggle"] then Functions.AddESP({ Object = Object, Text = "Giggle", Color = Options.EntityESPColor.Value }, true) end
@@ -3848,6 +4003,52 @@ Functions.HandleObject = function(Object)
 				if Part:IsA("BasePart") then Part.CanCollide = false Part.CanTouch = false end
 			end
 			Object:WaitForChild("Humanoid").Health = 0
+		end
+	elseif Name == "Ransom" then
+		if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
+			Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
+		end
+		table.insert(Objects.Entities, Object)
+		if Toggles.AutoRansomTrigger.Value then
+			Globals.RansomActive = true
+			-- Восстанавливаем настоящий footstep remote
+			if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
+				if Globals.FakeFootstepRemote then
+					Globals.FakeFootstepRemote.Parent = nil
+				end
+				Globals.RealFootstepRemote.Parent = RemotesFolder
+			end
+			if not Globals.RansomHeartbeatConn then
+				local startTime = tick()
+				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
+					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
+						Globals.RansomActive = false
+						Globals.RansomHeartbeatConn:Disconnect()
+						Globals.RansomHeartbeatConn = nil
+						if Humanoid then Humanoid:Move(Vector3.zero) end
+						-- Возвращаем фейковый remote
+						if Globals.RealFootstepRemote then
+							Globals.RealFootstepRemote.Parent = nil
+						end
+						if Globals.FakeFootstepRemote then
+							Globals.FakeFootstepRemote.Parent = RemotesFolder
+						end
+						return
+					end
+					if not Globals.RansomActive then return end
+					if Character:GetAttribute("Hiding") then return end
+					if not Humanoid or not RootPart then return end
+					local elapsed = tick() - startTime
+					local idx = (math.floor(elapsed) % 4) + 1
+					local dirs = {
+						RootPart.CFrame.LookVector,
+						-RootPart.CFrame.LookVector,
+						-RootPart.CFrame.RightVector,
+						RootPart.CFrame.RightVector,
+					}
+					Humanoid:Move(dirs[idx])
+				end)
+			end
 		end
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
@@ -4271,7 +4472,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
 	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup" or Prompt.Parent.Name == "HoneyPot") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
 		local BPack = Functions.HasItem("BandagePack")
@@ -4476,14 +4677,29 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 		table.insert(Objects.Entities, Entity)
 		if (Entity.Name == "Drones" or Entity.Name == "DronesStampede") and Toggles.BypassDrones.Value then
 			for _, Part in Entity:GetDescendants() do
-				if Part:IsA("BasePart") then Part.CanTouch = false end
+				if Part:IsA("BasePart") then
+					Part.CanTouch = false
+					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Toggles.BypassDrones.Value and Part.CanTouch then
+							Part.CanTouch = false
+						end
+					end)
+					table.insert(Connections, conn)
+				end
 			end
 			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
-				if Part:IsA("BasePart") then Part.CanTouch = false end
+				if Part:IsA("BasePart") then
+					Part.CanTouch = false
+					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Toggles.BypassDrones.Value and Part.CanTouch then
+							Part.CanTouch = false
+						end
+					end)
+					table.insert(Connections, conn)
+				end
 			end)
 			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
 		end
-
 	end
 
 	if RusherAliases[EntityData.Alias] then
@@ -4610,13 +4826,30 @@ Library:OnUnload(function()
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
 	end
-
-	
-	if DroneHealthConn then
-		DroneHealthConn:Disconnect()
-		DroneHealthConn = nil
+	if Globals.RansomTriggerConn then
+		Globals.RansomTriggerConn:Disconnect()
+		Globals.RansomTriggerConn = nil
 	end
-Globals.SeekNodesFolder:Destroy()
+	if Globals.RansomTriggerConn2 then
+		Globals.RansomTriggerConn2:Disconnect()
+		Globals.RansomTriggerConn2 = nil
+	end
+	if Globals.RansomHeartbeatConn then
+		Globals.RansomHeartbeatConn:Disconnect()
+		Globals.RansomHeartbeatConn = nil
+	end
+	if Globals.RansomHeartbeatConn then
+		Globals.RansomHeartbeatConn:Disconnect()
+		Globals.RansomHeartbeatConn = nil
+	end
+	if Globals.RealFootstepRemote then
+		Globals.RealFootstepRemote.Parent = nil
+	end
+	if Globals.FakeFootstepRemote then
+		Globals.FakeFootstepRemote.Parent = RemotesFolder
+	end
+
+	Globals.SeekNodesFolder:Destroy()
 	Globals.RoomsNodesFolder:Destroy()
 	Globals.ManipulateBody:Destroy()
 
