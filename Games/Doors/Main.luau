@@ -146,7 +146,11 @@ local Entities = {
 	["DronesStampede"] = {
 		Alias = "Drones Stampede",
 		NotifyMessage = { Title = "Entity 'Drones Stampede' has spawned.", Body = "Find a hiding spot." }
-	}
+	},
+	["Alma"] = {
+		Alias = "Alma",
+		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
+	},
 }
 
 local EntityIcons = {
@@ -169,6 +173,7 @@ local EntityIcons = {
 	["BashMoving"]      = "rbxassetid://12571092295",
 	["Scribbles"]       = "rbxassetid://12711591665",
 	["Drones"]          = "rbxassetid://6023426923",
+	["Alma"]             = "rbxassetid://6023426923",
 	["DronesStampede"]  = "rbxassetid://6023426923"
 }
 
@@ -1411,26 +1416,63 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
-if Toggles.AutoRansomTrigger.Value then
-		local PlayerGui = Player:WaitForChild("PlayerGui")
-		Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
-			if not Toggles.AutoRansomTrigger.Value then return end
-			local Name = string.lower(Desc.Name)
-			if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-				task.spawn(function()
-					task.wait(0.3)
-					if Camera and Toggles.AutoRansomTrigger.Value then
+Toggles.AutoRansomTrigger:OnChanged(function(Value)
+	-- Отключаем старые коннекты при выключении тогла
+	if not Value then
+		if Globals.RansomTriggerConn then
+			Globals.RansomTriggerConn:Disconnect()
+			Globals.RansomTriggerConn = nil
+		end
+		if Globals.RansomTriggerConn2 then
+			Globals.RansomTriggerConn2:Disconnect()
+			Globals.RansomTriggerConn2 = nil
+		end
+		return
+	end
+
+	-- Conn 1: слушаем появление UI-элементов Ransom в PlayerGui
+	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
+		if not Toggles.AutoRansomTrigger.Value then return end
+		local Name = string.lower(Desc.Name)
+		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
+			task.spawn(function()
+				-- Ждём появления стоп-знака, затем двигаем камеру
+				task.wait(0.3)
+				if Camera and Toggles.AutoRansomTrigger.Value then
+					local Orig = Camera.CFrame
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig
+				end
+			end)
+		end
+	end)
+
+	-- Conn 2: слушаем спавн сущности Ransom в Workspace
+	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
+		if not Toggles.AutoRansomTrigger.Value then return end
+		if Child.Name == "Ransom" then
+			task.spawn(function()
+				while Child.Parent and Toggles.AutoRansomTrigger.Value do
+					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
 						local Orig = Camera.CFrame
 						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
 						task.wait(0.1)
 						Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
 						task.wait(0.1)
 						Camera.CFrame = Orig
+						task.wait(0.3)
+					else
+						task.wait(0.5)
 					end
-				end)
-			end
-		end)
-	end
+				end
+			end)
+		end
+	end)
+end)
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
@@ -1752,7 +1794,7 @@ Groupboxes.Visuals_EntitySettings = Groupboxes.Visuals_RightTab:AddTab("Settings
 
 Groupboxes.Visuals_Entities:AddDropdown("EntityList", {
 	Text = "Entity List",
-	Values = { "Rush","Ambush","Eyes","Halt","Blitz","Lookman","Gloombat Swarm","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Monument","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede" },
+	Values = { "Rush","Ambush","Eyes","Halt","Blitz","Lookman","Gloombat Swarm","A-60","A-120","Sally","Jeff the Killer","Groundskeeper","Monument","AR0xMBUSH","RNIUSHCG==","Bash","Scribbles","Drones","Drones Stampede","Alma" },
 	Multi = true, AllowNull = true
 })
 Groupboxes.Visuals_Entities:AddToggle("NotifyEntities",    { Text = "Notify Entities",    Default = false, Tooltip = "Sends a notification when an entity spawns." })
@@ -3830,41 +3872,51 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
-		elseif Name == "Ransom" then
-		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Ransom"] then
-			Functions.AddESP({ Object = Object, Text = "Ransom", Color = Options.EntityESPColor.Value }, true)
-		end
-		if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
-			local ED = Entities["Ransom"]
-			Functions.Notify({ Title = ED.NotifyMessage.Title, Body = ED.NotifyMessage.Body, Image = EntityIcons["Ransom"] })
-		end
-		if Toggles.AutoRansomTrigger.Value then
-			task.spawn(function()
-				while Object.Parent and Toggles.AutoRansomTrigger.Value do
-					if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
-						-- Шаг 1: повернуть камеру влево
-						local OriginalCFrame = Camera.CFrame
-						Camera.CFrame = OriginalCFrame * CFrame.Angles(0, math.rad(20), 0)
-						task.wait(0.15)
-						-- Шаг 2: повернуть камеру вправо
-						Camera.CFrame = OriginalCFrame * CFrame.Angles(0, math.rad(-20), 0)
-						task.wait(0.15)
-						-- Шаг 3: вернуть камеру обратно
-						Camera.CFrame = OriginalCFrame
-						task.wait(0.15)
-						-- Шаг 4: сделать шаг вперёд
-						local Forward = RootPart.CFrame.LookVector
-						Humanoid:MoveTo(RootPart.Position + Forward * 2)
-						task.wait(0.3)
-						-- Шаг 5: шаг назад
-						Humanoid:MoveTo(RootPart.Position - Forward * 2)
-						task.wait(0.3)
-					end
+	elseif Name == "Ransom" then
+	if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
+		Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
+	end
+	table.insert(Objects.Entities, Object)
+	if Toggles.AutoRansomTrigger.Value then
+		task.spawn(function()
+			while Object.Parent and Toggles.AutoRansomTrigger.Value do
+				if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
+					local Orig = Camera.CFrame
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig
+					task.wait(0.3)
+				else
 					task.wait(0.5)
 				end
-			end)
-		end
-		table.insert(Objects.Entities, Object)
+			end
+		end)
+	end
+	elseif Name == "Ransom" then
+	if Toggles.NotifyEntities.Value and Options.EntityList.Value["Ransom"] then
+		Functions.Notify({ Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught.", Image = EntityIcons["Ransom"] })
+	end
+	table.insert(Objects.Entities, Object)
+	if Toggles.AutoRansomTrigger.Value then
+		task.spawn(function()
+			while Object.Parent and Toggles.AutoRansomTrigger.Value do
+				if not Character:GetAttribute("Hiding") and Humanoid and RootPart and Camera then
+					local Orig = Camera.CFrame
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig * CFrame.Angles(0, math.rad(-35), 0)
+					task.wait(0.1)
+					Camera.CFrame = Orig
+					task.wait(0.3)
+				else
+					task.wait(0.5)
+				end
+			end
+		end)
+	end
+
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
