@@ -151,7 +151,6 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
-
 }
 
 local EntityIcons = {
@@ -1302,7 +1301,6 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Ba
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",       { Text = "Bypass Drones",          Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
 
-
 Toggles.BypassGiggle:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
 		if Object.Name == "GiggleCeiling" then
@@ -1412,31 +1410,53 @@ Toggles.BypassJeff:OnChanged(function(Value)
 	end
 end)
 Toggles.BypassDrones:OnChanged(function(Value)
+	if not Globals.DroneBypassConns then Globals.DroneBypassConns = {} end
+	for _, Conn in Globals.DroneBypassConns do
+		pcall(function() Conn:Disconnect() end)
+	end
+	Globals.DroneBypassConns = {}
 	for _, Object in Objects.Entities do
 		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
 			for _, Part in Object:GetDescendants() do
 				if Part:IsA("BasePart") then
 					Part.CanTouch = not Value
 					Part.CanCollide = false
-					if Value then
-						Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-							if Part.CanTouch == true then
-								Part.CanTouch = false
-							end
-						end)
-						Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-							if Part.CanCollide == true then
-								Part.CanCollide = false
-							end
-						end)
-					end
+					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Part.CanTouch == Value then
+							Part.CanTouch = not Value
+						end
+					end)
+					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+						if Part.CanCollide == true then
+							Part.CanCollide = false
+						end
+					end)
+					table.insert(Globals.DroneBypassConns, Conn1)
+					table.insert(Globals.DroneBypassConns, Conn2)
 				end
 			end
+			local DescConn = Object.DescendantAdded:Connect(function(Part)
+				if Part:IsA("BasePart") then
+					Part.CanTouch = not Value
+					Part.CanCollide = false
+					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Part.CanTouch == Value then
+							Part.CanTouch = not Value
+						end
+					end)
+					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+						if Part.CanCollide == true then
+							Part.CanCollide = false
+						end
+					end)
+					table.insert(Globals.DroneBypassConns, Conn1)
+					table.insert(Globals.DroneBypassConns, Conn2)
+				end
+			end)
+			table.insert(Globals.DroneBypassConns, DescConn)
 		end
 	end
 end)
-
-
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
 	Text = "Anticheat Bypass", Default = false,
@@ -4461,39 +4481,44 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 		end
 		table.insert(Objects.Entities, Entity)
 		if (Entity.Name == "Drones" or Entity.Name == "DronesStampede") and Toggles.BypassDrones.Value then
+			if not Globals.DroneBypassConns then Globals.DroneBypassConns = {} end
 			for _, Part in Entity:GetDescendants() do
 				if Part:IsA("BasePart") then
 					Part.CanTouch = false
 					Part.CanCollide = false
-					Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
 						if Part.CanTouch == true then
 							Part.CanTouch = false
 						end
 					end)
-					Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
 						if Part.CanCollide == true then
 							Part.CanCollide = false
 						end
 					end)
+					table.insert(Globals.DroneBypassConns, Conn1)
+					table.insert(Globals.DroneBypassConns, Conn2)
 				end
 			end
 			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
 				if Part:IsA("BasePart") then
 					Part.CanTouch = false
 					Part.CanCollide = false
-					Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
 						if Part.CanTouch == true then
 							Part.CanTouch = false
 						end
 					end)
-					Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
 						if Part.CanCollide == true then
 							Part.CanCollide = false
 						end
 					end)
+					table.insert(Globals.DroneBypassConns, Conn1)
+					table.insert(Globals.DroneBypassConns, Conn2)
 				end
 			end)
-			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
+			table.insert(Globals.DroneBypassConns, DroneConn)
 		end
 	end
 
@@ -4621,6 +4646,14 @@ Library:OnUnload(function()
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
 	end
+
+	if Globals.DroneBypassConns then
+		for _, Conn in Globals.DroneBypassConns do
+			pcall(function() Conn:Disconnect() end)
+		end
+		Globals.DroneBypassConns = nil
+	end
+
 	Globals.SeekNodesFolder:Destroy()
 	Globals.RoomsNodesFolder:Destroy()
 	Globals.ManipulateBody:Destroy()
