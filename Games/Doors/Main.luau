@@ -1422,12 +1422,43 @@ Toggles.BypassJeff:OnChanged(function(Value)
 	end
 end)
 Toggles.BypassDrones:OnChanged(function(Value)
+	-- Отключаем CanTouch на всех частях дронов
 	for _, Object in Objects.Entities do
 		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
 			for _, Part in Object:GetDescendants() do
 				if Part:IsA("BasePart") then Part.CanTouch = not Value end
 			end
 		end
+	end
+	-- Перехват изменения Health: если дрон рядом и здоровье упало — восстанавливаем
+	if Value and not Globals.DronesHealthConn then
+		Globals.LastHealth = Humanoid.Health
+		Globals.DronesHealthConn = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+			if not Toggles.BypassDrones.Value then return end
+			if Globals.DronesBlockingDamage then return end
+			local currentHealth = Humanoid.Health
+			if Globals.LastHealth and currentHealth < Globals.LastHealth - 3 then
+				-- Проверяем, есть ли дрон рядом
+				local droneNear = false
+				for _, Object in Objects.Entities do
+					if (Object.Name == "Drones" or Object.Name == "DronesStampede") and Object.PrimaryPart then
+						local dist = (Object.PrimaryPart.Position - RootPart.Position).Magnitude
+						if dist < 35 then droneNear = true break end
+					end
+				end
+				if droneNear then
+					Globals.DronesBlockingDamage = true
+					Humanoid.Health = Globals.LastHealth
+					task.wait()
+					Globals.DronesBlockingDamage = false
+					return
+				end
+			end
+			Globals.LastHealth = currentHealth
+		end)
+	elseif not Value and Globals.DronesHealthConn then
+		Globals.DronesHealthConn:Disconnect()
+		Globals.DronesHealthConn = nil
 	end
 end)
 Toggles.AutoRansomTrigger:OnChanged(function(Value)
@@ -2110,6 +2141,8 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
 				Label = "Stardust Pile"
+			elseif Object.Name == "HoneyPot" then
+				Label = "Honey Pot [500]"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -3793,7 +3826,7 @@ Functions.HandleObject = function(Object)
 	elseif Name == "MouseHole" then
 		if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
 		table.insert(Objects.Chests, Object)
-	elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
+	elseif ItemNames[Name] and Name ~= "HoneyPot" and Object:FindFirstChild("ModulePrompt") then
 		if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
 		if Name == "LotusHolder" or Name == "LotusPetalPickup" then
 			Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3819,6 +3852,9 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Currency, Object)
 	elseif Name == "StardustPickup" then
 		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Stardust Pile", Color = Options.CurrencyESPColor.Value }, true) end
+		table.insert(Objects.Currency, Object)
+	elseif Name == "HoneyPot" then
+		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Honey Pot [500]", Color = Options.CurrencyESPColor.Value }, true) end
 		table.insert(Objects.Currency, Object)
 	elseif Name == "GiggleCeiling" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Giggle"] then Functions.AddESP({ Object = Object, Text = "Giggle", Color = Options.EntityESPColor.Value }, true) end
@@ -4403,7 +4439,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
 	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup" or Prompt.Parent.Name == "HoneyPot") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
 		local BPack = Functions.HasItem("BandagePack")
@@ -4613,9 +4649,26 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
 				if Part:IsA("BasePart") then Part.CanTouch = false end
 			end)
-			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
-		end
-	end
+			-- Блокируем knockback: если дрон толкает — возвращаем на место
+			local LastPos = RootPart.CFrame
+			local KnockbackConn = Services.RunService.Heartbeat:Connect(function()
+				if not Entity.Parent or not Toggles.BypassDrones.Value then
+					KnockbackConn:Disconnect()
+					return
+				end
+				if Character:GetAttribute("Hiding") then return end
+				if (RootPart.Position - LastPos.Position).Magnitude > 8 then
+					RootPart.CFrame = LastPos
+					RootPart.AssemblyLinearVelocity = Vector3.zero
+					RootPart.AssemblyAngularVelocity = Vector3.zero
+				end
+				LastPos = RootPart.CFrame
+			end)
+			Entity.Destroying:Once(function()
+				DroneConn:Disconnect()
+				KnockbackConn:Disconnect()
+			end)
+			end
 
 	if RusherAliases[EntityData.Alias] then
 		Instance.new("Humanoid", Entity).Name = "HighlightHumanoid"
