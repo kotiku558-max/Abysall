@@ -1469,7 +1469,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				RootPart.CFrame.RightVector,
 			}
 			local moveVector = dirs[idx]
-			RootPart.CFrame = RootPart.CFrame + moveVector * 0.5
+			RootPart.CFrame = RootPart.CFrame + moveVector * 0.2
 		end)
 	end
 
@@ -3948,7 +3948,7 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
-					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.5
+					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.2
 				end)
 			end
 		end
