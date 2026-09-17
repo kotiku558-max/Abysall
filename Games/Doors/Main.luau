@@ -664,11 +664,10 @@ FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
 
 if RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed") then
-    local RealRemote = RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed")
-    RealRemote:Destroy()
-
-    local FakeRemote = Instance.new("RemoteEvent", RemotesFolder)
-    FakeRemote.Name = "FootstepRemoteThatWeNeed"
+    Globals.RealFootstepRemote = RemotesFolder:FindFirstChild("FootstepRemoteThatWeNeed")
+    Globals.RealFootstepRemote.Parent = nil
+    Globals.FakeFootstepRemote = Instance.new("RemoteEvent", RemotesFolder)
+    Globals.FakeFootstepRemote.Name = "FootstepRemoteThatWeNeed"
 end
 
 Globals.FogInstances = {}
@@ -1436,13 +1435,39 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn = nil
 		end
 		Globals.RansomActive = false
+		-- Возвращаем фейковый remote
+		if Globals.RealFootstepRemote then
+			Globals.RealFootstepRemote.Parent = nil
+		end
+		if Globals.FakeFootstepRemote then
+			Globals.FakeFootstepRemote.Parent = RemotesFolder
+		end
 		return
 	end
 
 	Globals.RansomActive = false
 
+	local function RestoreRealFootsteps()
+		if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
+			if Globals.FakeFootstepRemote then
+				Globals.FakeFootstepRemote.Parent = nil
+			end
+			Globals.RealFootstepRemote.Parent = RemotesFolder
+		end
+	end
+
+	local function RestoreFakeFootsteps()
+		if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
+			Globals.RealFootstepRemote.Parent = nil
+		end
+		if Globals.FakeFootstepRemote and not Globals.FakeFootstepRemote.Parent then
+			Globals.FakeFootstepRemote.Parent = RemotesFolder
+		end
+	end
+
 	local function StartWalk()
 		if Globals.RansomHeartbeatConn then return end
+		RestoreRealFootsteps()
 		local startTime = tick()
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
@@ -1457,8 +1482,8 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				-RootPart.CFrame.RightVector,
 				RootPart.CFrame.RightVector,
 			}
-			RootPart.AssemblyLinearVelocity = dirs[idx] * 30
-			RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
+			local dir = dirs[idx]
+			Humanoid:Move(dir)
 		end)
 	end
 
@@ -1468,9 +1493,10 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
 		end
-		if RootPart then
-			RootPart.AssemblyLinearVelocity = Vector3.zero
+		if Humanoid then
+			Humanoid:Move(Vector3.zero)
 		end
+		RestoreFakeFootsteps()
 	end
 
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -3906,6 +3932,13 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Entities, Object)
 		if Toggles.AutoRansomTrigger.Value then
 			Globals.RansomActive = true
+			-- Восстанавливаем настоящий footstep remote
+			if Globals.RealFootstepRemote and not Globals.RealFootstepRemote.Parent then
+				if Globals.FakeFootstepRemote then
+					Globals.FakeFootstepRemote.Parent = nil
+				end
+				Globals.RealFootstepRemote.Parent = RemotesFolder
+			end
 			if not Globals.RansomHeartbeatConn then
 				local startTime = tick()
 				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
@@ -3913,6 +3946,14 @@ Functions.HandleObject = function(Object)
 						Globals.RansomActive = false
 						Globals.RansomHeartbeatConn:Disconnect()
 						Globals.RansomHeartbeatConn = nil
+						if Humanoid then Humanoid:Move(Vector3.zero) end
+						-- Возвращаем фейковый remote
+						if Globals.RealFootstepRemote then
+							Globals.RealFootstepRemote.Parent = nil
+						end
+						if Globals.FakeFootstepRemote then
+							Globals.FakeFootstepRemote.Parent = RemotesFolder
+						end
 						return
 					end
 					if not Globals.RansomActive then return end
@@ -3926,8 +3967,7 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
-					RootPart.AssemblyLinearVelocity = dirs[idx] * 30
-					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
+					Humanoid:Move(dirs[idx])
 				end)
 			end
 		end
@@ -4693,6 +4733,16 @@ Library:OnUnload(function()
 	if Globals.RansomHeartbeatConn then
 		Globals.RansomHeartbeatConn:Disconnect()
 		Globals.RansomHeartbeatConn = nil
+	end
+	if Globals.RansomHeartbeatConn then
+		Globals.RansomHeartbeatConn:Disconnect()
+		Globals.RansomHeartbeatConn = nil
+	end
+	if Globals.RealFootstepRemote then
+		Globals.RealFootstepRemote.Parent = nil
+	end
+	if Globals.FakeFootstepRemote then
+		Globals.FakeFootstepRemote.Parent = RemotesFolder
 	end
 
 	Globals.SeekNodesFolder:Destroy()
