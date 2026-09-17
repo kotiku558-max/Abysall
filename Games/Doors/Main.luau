@@ -1422,18 +1422,30 @@ Toggles.BypassJeff:OnChanged(function(Value)
 	end
 end)
 Toggles.BypassDrones:OnChanged(function(Value)
+	-- Clean up old connections
+	if Globals.DroneBypassConns then
+		for _, conn in Globals.DroneBypassConns do
+			pcall(function() conn:Disconnect() end)
+		end
+	end
+	Globals.DroneBypassConns = {}
+
+	local function ApplyDroneBypass(part)
+		if not part:IsA("BasePart") then return end
+		part.CanTouch = not Value
+		part.CanCollide = false
+		local conn = part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+			if part.CanTouch == Value then
+				part.CanTouch = not Value
+			end
+		end)
+		table.insert(Globals.DroneBypassConns, conn)
+	end
+
 	for _, Object in Objects.Entities do
 		if Object.Name == "Drones" or Object.Name == "DronesStampede" then
 			for _, Part in Object:GetDescendants() do
-				if Part:IsA("BasePart") then
-					Part.CanTouch = not Value
-					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Toggles.BypassDrones.Value and Part.CanTouch then
-							Part.CanTouch = false
-						end
-					end)
-					table.insert(Connections, conn)
-				end
+				ApplyDroneBypass(Part)
 			end
 		end
 	end
@@ -2821,67 +2833,6 @@ Functions.HandleCharacter = function(NewCharacter)
 
 	Globals.OldCamera = Camera
 	Globals.MainUI = LocalPlayer.PlayerGui.MainUI
-
-	-- Drone Bypass: Health protection (restore to PREVIOUS value, not max)
-	local DroneLastHealth = Humanoid.Health
-	Connections.DroneHealthProtect = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-		if not Toggles.BypassDrones then return end
-		if not Toggles.BypassDrones.Value then
-			DroneLastHealth = Humanoid.Health
-			return
-		end
-
-		local newHealth = Humanoid.Health
-		if newHealth < DroneLastHealth then
-			-- Health dropped, check if drone is near
-			local droneNear = false
-			for _, Entity in Objects.Entities do
-				if Entity.Name == "Drones" or Entity.Name == "DronesStampede" then
-					if Entity.PrimaryPart then
-						local dist = LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position)
-						if dist < 40 then
-							droneNear = true
-							break
-						end
-					end
-				end
-			end
-
-			if droneNear then
-				Humanoid.Health = DroneLastHealth
-			else
-				DroneLastHealth = newHealth
-			end
-		else
-			DroneLastHealth = newHealth
-		end
-	end)
-
-	-- Drone Bypass: Ragdoll prevention
-	Connections.DroneRagdollProtect = Services.RunService.Heartbeat:Connect(function()
-		if not Toggles.BypassDrones then return end
-		if not Toggles.BypassDrones.Value then return end
-		if not Humanoid or not RootPart then return end
-
-		local state = Humanoid:GetState()
-		if state == Enum.HumanoidStateType.Physics or state == Enum.HumanoidStateType.FallingDown then
-			local droneNear = false
-			for _, Entity in Objects.Entities do
-				if Entity.Name == "Drones" or Entity.Name == "DronesStampede" then
-					if Entity.PrimaryPart then
-						local dist = LocalPlayer:DistanceFromCharacter(Entity.PrimaryPart.Position)
-						if dist < 40 then
-							droneNear = true
-							break
-						end
-					end
-				end
-			end
-			if droneNear then
-				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-			end
-		end
-	end)
 
 	Collision = NewCharacter:WaitForChild("Collision")
 	CollisionPart  = NewCharacter:FindFirstChild("CollisionPart") or NewCharacter:FindFirstChild("Collision")
@@ -4676,27 +4627,21 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 		end
 		table.insert(Objects.Entities, Entity)
 		if (Entity.Name == "Drones" or Entity.Name == "DronesStampede") and Toggles.BypassDrones.Value then
+			local function DisablePart(Part)
+				if not Part:IsA("BasePart") then return end
+				Part.CanTouch = false
+				Part.CanCollide = false
+				Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+					if Part.CanTouch == true and Toggles.BypassDrones.Value then
+						Part.CanTouch = false
+					end
+				end)
+			end
 			for _, Part in Entity:GetDescendants() do
-				if Part:IsA("BasePart") then
-					Part.CanTouch = false
-					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Toggles.BypassDrones.Value and Part.CanTouch then
-							Part.CanTouch = false
-						end
-					end)
-					table.insert(Connections, conn)
-				end
+				DisablePart(Part)
 			end
 			local DroneConn = Entity.DescendantAdded:Connect(function(Part)
-				if Part:IsA("BasePart") then
-					Part.CanTouch = false
-					local conn = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Toggles.BypassDrones.Value and Part.CanTouch then
-							Part.CanTouch = false
-						end
-					end)
-					table.insert(Connections, conn)
-				end
+				DisablePart(Part)
 			end)
 			Entity.Destroying:Once(function() DroneConn:Disconnect() end)
 		end
@@ -4773,6 +4718,12 @@ Library:OnUnload(function()
 		end
 	end
 
+	if Globals.DroneBypassConns then
+		for _, conn in Globals.DroneBypassConns do
+			pcall(function() conn:Disconnect() end)
+		end
+		Globals.DroneBypassConns = nil
+	end
 	for _, Object in Objects.Entities do
 		if Object.Name == "Snare" or Object.Name == "GiggleCeiling" then
 			local Hitbox = Object:FindFirstChild("Hitbox")
