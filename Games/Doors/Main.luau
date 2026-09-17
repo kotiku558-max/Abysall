@@ -151,6 +151,10 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
+	["Ransom"] = {
+		Alias = "Ransom",
+		NotifyMessage = { Title = "Entity 'Ransom' has spawned.", Body = "Keep moving to avoid being caught." }
+	},
 }
 
 local EntityIcons = {
@@ -174,6 +178,7 @@ local EntityIcons = {
 	["Scribbles"]       = "rbxassetid://12711591665",
 	["Drones"]          = "rbxassetid://6023426923",
 	["Alma"]             = "rbxassetid://6023426923",
+	["Ransom"]            = "rbxassetid://6023426923",
 	["DronesStampede"]  = "rbxassetid://6023426923"
 }
 
