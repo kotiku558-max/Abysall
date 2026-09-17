@@ -1443,33 +1443,21 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 
 	local function StartWalk()
 		if Globals.RansomHeartbeatConn then return end
-
-		local directions = {
-			RootPart.CFrame.LookVector,   -- вперёд
-			-RootPart.CFrame.LookVector,  -- назад
-			-RootPart.CFrame.RightVector,  -- налево
-			RootPart.CFrame.RightVector,   -- направо
-		}
 		local startTime = tick()
-
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
 			if not Globals.RansomActive then return end
 			if Character:GetAttribute("Hiding") then return end
 			if not Humanoid or not RootPart then return end
-
 			local elapsed = tick() - startTime
 			local idx = (math.floor(elapsed) % 4) + 1
-
-			-- Обновляем направления от текущей позиции
 			local dirs = {
 				RootPart.CFrame.LookVector,
 				-RootPart.CFrame.LookVector,
 				-RootPart.CFrame.RightVector,
 				RootPart.CFrame.RightVector,
 			}
-			local moveVector = dirs[idx]
-			RootPart.CFrame = RootPart.CFrame + moveVector * 0.2
+			RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
 		end)
 	end
 
@@ -1481,15 +1469,13 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		end
 	end
 
-	-- Conn 1: слушаем PlayerGui
+	-- Conn 1: слушаем PlayerGui — ТОЛЬКО точное имя "Ransom"
 	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 	Globals.RansomTriggerConn = PlayerGui.DescendantAdded:Connect(function(Desc)
 		if not Toggles.AutoRansomTrigger.Value then return end
-		local Name = string.lower(Desc.Name)
-		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
+		if Desc.Name == "Ransom" then
 			Globals.RansomActive = true
 			StartWalk()
-			-- Слушаем удаление элемента — останавливаем
 			Desc.AncestryChanged:Connect(function(_, Parent)
 				if not Parent then
 					StopWalk()
@@ -1511,16 +1497,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			end)
 		end
 	end)
-
-	-- Проверяем, не активен ли Ransom уже
-	for _, Desc in PlayerGui:GetDescendants() do
-		local Name = string.lower(Desc.Name)
-		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			Globals.RansomActive = true
-			StartWalk()
-			break
-		end
-	end
 end)
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
@@ -3948,7 +3924,7 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
-					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.2
+					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.08
 				end)
 			end
 		end
