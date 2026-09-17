@@ -1435,19 +1435,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn = nil
 		end
 		Globals.RansomActive = false
-		-- Release all keys
-		pcall(function()
-			local VIM = game:GetService("VirtualInputManager")
-			VIM:SendKeyEvent(false, Enum.KeyCode.W, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.S, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.A, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.D, false)
-		end)
-		pcall(function()
-			if keyrelease then
-				keyrelease(0x57) keyrelease(0x53) keyrelease(0x41) keyrelease(0x44)
-			end
-		end)
 		-- Возвращаем фейковый remote
 		if Globals.RealFootstepRemote then
 			Globals.RealFootstepRemote.Parent = nil
@@ -1483,38 +1470,13 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		RestoreRealFootsteps()
 		local startTime = tick()
 		local lastStep = 0
-		local lastSwitch = tick()
-		local idx = 1
-		local VIM = game:GetService("VirtualInputManager")
-		local keyHexMap = {
-			[Enum.KeyCode.W] = 0x57,
-			[Enum.KeyCode.S] = 0x53,
-			[Enum.KeyCode.A] = 0x41,
-			[Enum.KeyCode.D] = 0x44,
-		}
-		local keyList = { Enum.KeyCode.W, Enum.KeyCode.S, Enum.KeyCode.A, Enum.KeyCode.D }
-		local function SendKey(keyCode, isDown)
-			pcall(function() VIM:SendKeyEvent(isDown, keyCode, false) end)
-			pcall(function()
-				if isDown and keypress then keypress(keyHexMap[keyCode])
-				elseif not isDown and keyrelease then keyrelease(keyHexMap[keyCode]) end
-			end)
-		end
-		-- Press first key
-		SendKey(keyList[idx], true)
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
 			if not Globals.RansomActive then return end
 			if Character:GetAttribute("Hiding") then return end
 			if not Humanoid or not RootPart then return end
-			-- Switch direction every 1 second
-			if tick() - lastSwitch >= 1 then
-				lastSwitch = tick()
-				SendKey(keyList[idx], false)
-				task.wait(0.05)
-				idx = idx == 4 and 1 or idx + 1
-				SendKey(keyList[idx], true)
-			end
+			local elapsed = tick() - startTime
+			local idx = (math.floor(elapsed) % 4) + 1
 			local dirs = {
 				RootPart.CFrame.LookVector,
 				-RootPart.CFrame.LookVector,
@@ -1522,14 +1484,15 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				RootPart.CFrame.RightVector,
 			}
 			local dir = dirs[idx]
-			Humanoid:Move(dir)
 			RootPart.CFrame = RootPart.CFrame + dir * 0.15
 			RootPart.AssemblyLinearVelocity = dir * 16
-			-- Fire footstep remote every 0.4 sec
+			Humanoid:Move(dir)
 			if tick() - lastStep > 0.4 then
 				lastStep = tick()
 				if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
-					pcall(function() Globals.RealFootstepRemote:FireServer() end)
+					pcall(function()
+						Globals.RealFootstepRemote:FireServer()
+					end)
 				end
 			end
 		end)
@@ -1541,25 +1504,12 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
 		end
-		if Humanoid then
-			Humanoid:Move(Vector3.zero)
-		end
 		if RootPart then
 			RootPart.AssemblyLinearVelocity = Vector3.zero
 		end
-		-- Release all keys
-		pcall(function()
-			local VIM = game:GetService("VirtualInputManager")
-			VIM:SendKeyEvent(false, Enum.KeyCode.W, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.S, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.A, false)
-			VIM:SendKeyEvent(false, Enum.KeyCode.D, false)
-		end)
-		pcall(function()
-			if keyrelease then
-				keyrelease(0x57) keyrelease(0x53) keyrelease(0x41) keyrelease(0x44)
-			end
-		end)
+		if Humanoid then
+			Humanoid:Move(Vector3.zero)
+		end
 		RestoreFakeFootsteps()
 	end
 
@@ -4010,32 +3960,16 @@ Functions.HandleObject = function(Object)
 			if not Globals.RansomHeartbeatConn then
 				local startTime = tick()
 				local lastStep = 0
-				local lastSwitch = tick()
-				local idx = 1
-				local VIM = game:GetService("VirtualInputManager")
-				local keyHexMap = {
-					[Enum.KeyCode.W] = 0x57,
-					[Enum.KeyCode.S] = 0x53,
-					[Enum.KeyCode.A] = 0x41,
-					[Enum.KeyCode.D] = 0x44,
-				}
-				local keyList = { Enum.KeyCode.W, Enum.KeyCode.S, Enum.KeyCode.A, Enum.KeyCode.D }
-				local function SendKey(keyCode, isDown)
-					pcall(function() VIM:SendKeyEvent(isDown, keyCode, false) end)
-					pcall(function()
-						if isDown and keypress then keypress(keyHexMap[keyCode])
-						elseif not isDown and keyrelease then keyrelease(keyHexMap[keyCode]) end
-					end)
-				end
-				SendKey(keyList[idx], true)
 				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
 						Globals.RansomActive = false
 						Globals.RansomHeartbeatConn:Disconnect()
 						Globals.RansomHeartbeatConn = nil
+						if RootPart then
+							RootPart.AssemblyLinearVelocity = Vector3.zero
+						end
 						if Humanoid then Humanoid:Move(Vector3.zero) end
-						if RootPart then RootPart.AssemblyLinearVelocity = Vector3.zero end
-						for _, keyCode in keyList do SendKey(keyCode, false) end
+						-- Возвращаем фейковый remote
 						if Globals.RealFootstepRemote then
 							Globals.RealFootstepRemote.Parent = nil
 						end
@@ -4047,13 +3981,8 @@ Functions.HandleObject = function(Object)
 					if not Globals.RansomActive then return end
 					if Character:GetAttribute("Hiding") then return end
 					if not Humanoid or not RootPart then return end
-					if tick() - lastSwitch >= 1 then
-						lastSwitch = tick()
-						SendKey(keyList[idx], false)
-						task.wait(0.05)
-						idx = idx == 4 and 1 or idx + 1
-						SendKey(keyList[idx], true)
-					end
+					local elapsed = tick() - startTime
+					local idx = (math.floor(elapsed) % 4) + 1
 					local dirs = {
 						RootPart.CFrame.LookVector,
 						-RootPart.CFrame.LookVector,
@@ -4061,13 +3990,15 @@ Functions.HandleObject = function(Object)
 						RootPart.CFrame.RightVector,
 					}
 					local dir = dirs[idx]
-					Humanoid:Move(dir)
 					RootPart.CFrame = RootPart.CFrame + dir * 0.15
 					RootPart.AssemblyLinearVelocity = dir * 16
+					Humanoid:Move(dir)
 					if tick() - lastStep > 0.4 then
 						lastStep = tick()
 						if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
-							pcall(function() Globals.RealFootstepRemote:FireServer() end)
+							pcall(function()
+								Globals.RealFootstepRemote:FireServer()
+							end)
 						end
 					end
 				end)
