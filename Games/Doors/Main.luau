@@ -1469,7 +1469,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if Globals.RansomHeartbeatConn then return end
 		RestoreRealFootsteps()
 		local startTime = tick()
-		local lastStep = 0
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
 			if not Globals.RansomActive then return end
@@ -1484,19 +1483,7 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 				RootPart.CFrame.RightVector,
 			}
 			local dir = dirs[idx]
-			-- Прямое перемещение (обходит контрольный скрипт Roblox)
-			RootPart.CFrame = RootPart.CFrame + dir * 0.15
-			-- Скорость для сервера
-			RootPart.AssemblyLinearVelocity = dir * 16
-			-- Шаги на сервер (Ransom считает именно шаги)
-			if tick() - lastStep > 0.4 then
-				lastStep = tick()
-				if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
-					pcall(function()
-						Globals.RealFootstepRemote:FireServer()
-					end)
-				end
-			end
+			Humanoid:Move(dir)
 		end)
 	end
 
@@ -1505,9 +1492,6 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if Globals.RansomHeartbeatConn then
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
-		end
-		if RootPart then
-			RootPart.AssemblyLinearVelocity = Vector3.zero
 		end
 		if Humanoid then
 			Humanoid:Move(Vector3.zero)
@@ -2116,6 +2100,8 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
 				Label = "Stardust Pile"
+			elseif Object.Name == "HoneyPot" then
+				Label = "Honey Pot [500]"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -2760,10 +2746,6 @@ if Functions.CheckCompatability({"hookmetamethod", "newcclosure", "getnamecallme
         local Real = OtherHook(Self, Property)
 
         if Property == "MoveDirection" and Self == Humanoid and Globals.RoomsAutoWalkActive and Toggles.RoomsAutoWalkSpoofFootsteps.Value and Floor == "Rooms" and not Character:GetAttribute("Hiding") then
-            return RootPart.CFrame.LookVector
-        end
-
-        if Property == "MoveDirection" and Self == Humanoid and Globals.RansomActive and not Character:GetAttribute("Hiding") then
             return RootPart.CFrame.LookVector
         end
         
@@ -3803,7 +3785,7 @@ Functions.HandleObject = function(Object)
 	elseif Name == "MouseHole" then
 		if Toggles.ChestESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Mouse", Color = Options.ChestESPColor.Value }, true) end
 		table.insert(Objects.Chests, Object)
-	elseif ItemNames[Name] and Object:FindFirstChild("ModulePrompt") then
+	elseif ItemNames[Name] and Name ~= "HoneyPot" and Object:FindFirstChild("ModulePrompt") then
 		if Toggles.ItemESPToggle.Value then Functions.AddESP({ Object = Object, Text = ItemNames[Name], Color = Options.ItemESPColor.Value }, Object:GetAttribute("ParentRoom") ~= nil) end
 		if Name == "LotusHolder" or Name == "LotusPetalPickup" then
 			Object.Handle:GetPropertyChangedSignal("LocalTransparencyModifier"):Connect(function()
@@ -3829,6 +3811,9 @@ Functions.HandleObject = function(Object)
 		table.insert(Objects.Currency, Object)
 	elseif Name == "StardustPickup" then
 		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Stardust Pile", Color = Options.CurrencyESPColor.Value }, true) end
+		table.insert(Objects.Currency, Object)
+	elseif Name == "HoneyPot" then
+		if Toggles.CurrencyESPToggle.Value then Functions.AddESP({ Object = Object, Text = "Honey Pot [500]", Color = Options.CurrencyESPColor.Value }, true) end
 		table.insert(Objects.Currency, Object)
 	elseif Name == "GiggleCeiling" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Giggle"] then Functions.AddESP({ Object = Object, Text = "Giggle", Color = Options.EntityESPColor.Value }, true) end
@@ -3961,15 +3946,11 @@ Functions.HandleObject = function(Object)
 			end
 			if not Globals.RansomHeartbeatConn then
 				local startTime = tick()
-				local lastStep = 0
 				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
 						Globals.RansomActive = false
 						Globals.RansomHeartbeatConn:Disconnect()
 						Globals.RansomHeartbeatConn = nil
-						if RootPart then
-							RootPart.AssemblyLinearVelocity = Vector3.zero
-						end
 						if Humanoid then Humanoid:Move(Vector3.zero) end
 						-- Возвращаем фейковый remote
 						if Globals.RealFootstepRemote then
@@ -3991,17 +3972,7 @@ Functions.HandleObject = function(Object)
 						-RootPart.CFrame.RightVector,
 						RootPart.CFrame.RightVector,
 					}
-					local dir = dirs[idx]
-					RootPart.CFrame = RootPart.CFrame + dir * 0.15
-					RootPart.AssemblyLinearVelocity = dir * 16
-					if tick() - lastStep > 0.4 then
-						lastStep = tick()
-						if Globals.RealFootstepRemote and Globals.RealFootstepRemote.Parent then
-							pcall(function()
-								Globals.RealFootstepRemote:FireServer()
-							end)
-						end
-					end
+					Humanoid:Move(dirs[idx])
 				end)
 			end
 		end
@@ -4219,7 +4190,7 @@ local AllowedInstances = {
 	LiveBreakerPolePickup=true, LeverForGate=true, GloomPile=true, SeekFloodline=true, Door=true,
 	Green_Herb=true, Bridge=true, MouseHole=true, BananaPeel=true, NannerPeel=true, PowerupPad=true,
 	IndustrialGate=true, CollisionFloor=true, ElevatorCar=true, Wax_Door=true, ThingToOpen=true,
-	MovingDoor=true, StardustPickup=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
+	MovingDoor=true, StardustPickup=true, HoneyPot=true, Hole=true, Groundskeeper=true, MandrakeLive=true,
 	GardenGateButton=true, LotusPetalPickup=true, VineGuillotine=true, LiveEntityBramble=true,
 	RiftSpawn=true, ElevatorBreaker=true, RunnerNodes=true, PathLights=true, DuckBoard=true,
 	Padlock=true, EyestalkEndCutscene=true, MinecartRig=true, SeekMovingNewClone=true,
@@ -4427,7 +4398,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
 	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
-	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
+	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup" or Prompt.Parent.Name == "HoneyPot") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
 		local BPack = Functions.HasItem("BandagePack")
@@ -4763,6 +4734,10 @@ Library:OnUnload(function()
 	if Globals.RansomTriggerConn2 then
 		Globals.RansomTriggerConn2:Disconnect()
 		Globals.RansomTriggerConn2 = nil
+	end
+	if Globals.RansomHeartbeatConn then
+		Globals.RansomHeartbeatConn:Disconnect()
+		Globals.RansomHeartbeatConn = nil
 	end
 	if Globals.RansomHeartbeatConn then
 		Globals.RansomHeartbeatConn:Disconnect()
