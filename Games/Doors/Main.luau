@@ -1435,37 +1435,50 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 			Globals.RansomHeartbeatConn:Disconnect()
 			Globals.RansomHeartbeatConn = nil
 		end
+		Globals.RansomActive = false
 		return
 	end
 
-	local function RansomWalk()
-		if Globals.RansomHeartbeatConn then
-			Globals.RansomHeartbeatConn:Disconnect()
-		end
+	Globals.RansomActive = false
+
+	local function StartWalk()
+		if Globals.RansomHeartbeatConn then return end
 
 		local directions = {
-			Vector3.new(0, 0, -1),  -- вперёд
-			Vector3.new(0, 0, 1),   -- назад
-			Vector3.new(-1, 0, 0),  -- налево
-			Vector3.new(1, 0, 0),   -- направо
+			RootPart.CFrame.LookVector,   -- вперёд
+			-RootPart.CFrame.LookVector,  -- назад
+			-RootPart.CFrame.RightVector,  -- налево
+			RootPart.CFrame.RightVector,   -- направо
 		}
-		local idx = 1
 		local startTime = tick()
 
 		Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 			if not Toggles.AutoRansomTrigger.Value then return end
+			if not Globals.RansomActive then return end
 			if Character:GetAttribute("Hiding") then return end
 			if not Humanoid or not RootPart then return end
 
-			-- Меняем направление каждую секунду
 			local elapsed = tick() - startTime
-			idx = (math.floor(elapsed) % 4) + 1
+			local idx = (math.floor(elapsed) % 4) + 1
 
-			-- Двигаем RootPart напрямую
-			local dir = directions[idx]
-			local moveVector = RootPart.CFrame:VectorToWorldSpace(dir)
+			-- Обновляем направления от текущей позиции
+			local dirs = {
+				RootPart.CFrame.LookVector,
+				-RootPart.CFrame.LookVector,
+				-RootPart.CFrame.RightVector,
+				RootPart.CFrame.RightVector,
+			}
+			local moveVector = dirs[idx]
 			RootPart.CFrame = RootPart.CFrame + moveVector * 0.5
 		end)
+	end
+
+	local function StopWalk()
+		Globals.RansomActive = false
+		if Globals.RansomHeartbeatConn then
+			Globals.RansomHeartbeatConn:Disconnect()
+			Globals.RansomHeartbeatConn = nil
+		end
 	end
 
 	-- Conn 1: слушаем PlayerGui
@@ -1474,7 +1487,14 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			RansomWalk()
+			Globals.RansomActive = true
+			StartWalk()
+			-- Слушаем удаление элемента — останавливаем
+			Desc.AncestryChanged:Connect(function(_, Parent)
+				if not Parent then
+					StopWalk()
+				end
+			end)
 		end
 	end)
 
@@ -1482,7 +1502,13 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 	Globals.RansomTriggerConn2 = Services.Workspace.ChildAdded:Connect(function(Child)
 		if not Toggles.AutoRansomTrigger.Value then return end
 		if Child.Name == "Ransom" then
-			RansomWalk()
+			Globals.RansomActive = true
+			StartWalk()
+			Child.AncestryChanged:Connect(function(_, Parent)
+				if not Parent then
+					StopWalk()
+				end
+			end)
 		end
 	end)
 
@@ -1490,7 +1516,8 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 	for _, Desc in PlayerGui:GetDescendants() do
 		local Name = string.lower(Desc.Name)
 		if string.find(Name, "ransom") or string.find(Name, "a90") or string.find(Name, "a-90") then
-			RansomWalk()
+			Globals.RansomActive = true
+			StartWalk()
 			break
 		end
 	end
@@ -3900,32 +3927,30 @@ Functions.HandleObject = function(Object)
 		end
 		table.insert(Objects.Entities, Object)
 		if Toggles.AutoRansomTrigger.Value then
-			task.spawn(function()
-				if Globals.RansomHeartbeatConn then
-					Globals.RansomHeartbeatConn:Disconnect()
-				end
-				local directions = {
-					Vector3.new(0, 0, -1),
-					Vector3.new(0, 0, 1),
-					Vector3.new(-1, 0, 0),
-					Vector3.new(1, 0, 0),
-				}
+			Globals.RansomActive = true
+			if not Globals.RansomHeartbeatConn then
 				local startTime = tick()
 				Globals.RansomHeartbeatConn = Services.RunService.Heartbeat:Connect(function()
 					if not Object.Parent or not Toggles.AutoRansomTrigger.Value then
+						Globals.RansomActive = false
 						Globals.RansomHeartbeatConn:Disconnect()
 						Globals.RansomHeartbeatConn = nil
 						return
 					end
+					if not Globals.RansomActive then return end
 					if Character:GetAttribute("Hiding") then return end
 					if not Humanoid or not RootPart then return end
 					local elapsed = tick() - startTime
 					local idx = (math.floor(elapsed) % 4) + 1
-					local dir = directions[idx]
-					local moveVector = RootPart.CFrame:VectorToWorldSpace(dir)
-					RootPart.CFrame = RootPart.CFrame + moveVector * 0.5
+					local dirs = {
+						RootPart.CFrame.LookVector,
+						-RootPart.CFrame.LookVector,
+						-RootPart.CFrame.RightVector,
+						RootPart.CFrame.RightVector,
+					}
+					RootPart.CFrame = RootPart.CFrame + dirs[idx] * 0.5
 				end)
-			end)
+			end
 		end
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
