@@ -151,6 +151,7 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
+
 }
 
 local EntityIcons = {
@@ -657,6 +658,7 @@ FakeEvents.Screech_Real = RemotesFolder:WaitForChild("Screech")
 FakeEvents.Shade_Real   = RemotesFolder:WaitForChild("ShadeResult")
 FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
+
 
 Globals.FogInstances = {}
 Globals.OldFog = Services.Lighting.FogEnd
@@ -1300,6 +1302,7 @@ Groupboxes.Exploits_Bypass:AddToggle("BypassBanana",         { Text = "Bypass Ba
 Groupboxes.Exploits_Bypass:AddToggle("BypassJeff",           { Text = "Bypass Jeff",             Default = false, Tooltip = "Prevents 'Jeff the Killer' from stabbing you (sometimes doesn't work)." })
 Groupboxes.Exploits_Bypass:AddToggle("BypassDrones",       { Text = "Bypass Drones",          Default = false, Tooltip = "Prevents 'Drones' from knocking you down and dealing damage." })
 
+
 Toggles.BypassGiggle:OnChanged(function(Value)
 	for _, Object in Objects.Entities do
 		if Object.Name == "GiggleCeiling" then
@@ -1414,22 +1417,25 @@ Toggles.BypassDrones:OnChanged(function(Value)
 			for _, Part in Object:GetDescendants() do
 				if Part:IsA("BasePart") then
 					Part.CanTouch = not Value
-					Part.CanCollide = not Value
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch == Value then
-							Part.CanTouch = not Value
-						end
-					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide == Value then
-							Part.CanCollide = not Value
-						end
-					end)
+					Part.CanCollide = false
+					if Value then
+						Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+							if Part.CanTouch == true then
+								Part.CanTouch = false
+							end
+						end)
+						Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+							if Part.CanCollide == true then
+								Part.CanCollide = false
+							end
+						end)
+					end
 				end
 			end
 		end
 	end
 end)
+
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
@@ -3829,7 +3835,6 @@ Functions.HandleObject = function(Object)
 			end
 			Object:WaitForChild("Humanoid").Health = 0
 		end
-	
 	elseif Name == "GrumbleRig" then
 		if Toggles.EntityESPToggle.Value and Options.EntityESPOptions.Value["Grumble"] then Functions.AddESP({ Object = Object, Text = "Grumble", Color = Options.EntityESPColor.Value }, true) end
 		table.insert(Objects.Entities, Object)
@@ -4460,11 +4465,15 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 				if Part:IsA("BasePart") then
 					Part.CanTouch = false
 					Part.CanCollide = false
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch then Part.CanTouch = false end
+					Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Part.CanTouch == true then
+							Part.CanTouch = false
+						end
 					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide then Part.CanCollide = false end
+					Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+						if Part.CanCollide == true then
+							Part.CanCollide = false
+						end
 					end)
 				end
 			end
@@ -4472,11 +4481,15 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 				if Part:IsA("BasePart") then
 					Part.CanTouch = false
 					Part.CanCollide = false
-					local Conn1 = Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
-						if Part.CanTouch then Part.CanTouch = false end
+					Part:GetPropertyChangedSignal("CanTouch"):Connect(function()
+						if Part.CanTouch == true then
+							Part.CanTouch = false
+						end
 					end)
-					local Conn2 = Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
-						if Part.CanCollide then Part.CanCollide = false end
+					Part:GetPropertyChangedSignal("CanCollide"):Connect(function()
+						if Part.CanCollide == true then
+							Part.CanCollide = false
+						end
 					end)
 				end
 			end)
@@ -4608,7 +4621,6 @@ Library:OnUnload(function()
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
 	end
-
 	Globals.SeekNodesFolder:Destroy()
 	Globals.RoomsNodesFolder:Destroy()
 	Globals.ManipulateBody:Destroy()
