@@ -151,6 +151,7 @@ local Entities = {
 		Alias = "Alma",
 		NotifyMessage = { Title = "Entity 'Alma' has spawned.", Body = "Avoid looking at her for too long." }
 	},
+
 }
 
 local EntityIcons = {
@@ -657,7 +658,6 @@ FakeEvents.Screech_Real = RemotesFolder:WaitForChild("Screech")
 FakeEvents.Shade_Real   = RemotesFolder:WaitForChild("ShadeResult")
 FakeEvents.A90_Real     = RemotesFolder:FindFirstChild("A90")
 FakeEvents.Surge_Real   = RemotesFolder:FindFirstChild("SurgeRemote")
-
 
 
 Globals.FogInstances = {}
@@ -1409,7 +1409,6 @@ Toggles.BypassJeff:OnChanged(function(Value)
 		end
 	end
 end)
-
 
 Groupboxes.Exploits_BypassRight = Tabs.Exploits:AddRightGroupbox("Bypass")
 Groupboxes.Exploits_BypassRight:AddToggle("DisableAnticheat", {
@@ -4434,7 +4433,6 @@ Connections.EntityHandler = Services.Workspace.ChildAdded:Connect(function(Entit
 			end
 		end
 		table.insert(Objects.Entities, Entity)
-
 	end
 
 	if RusherAliases[EntityData.Alias] then
@@ -4561,8 +4559,6 @@ Library:OnUnload(function()
 		FakeEvents.Surge:Destroy()
 		FakeEvents.Surge_Real.Parent = RemotesFolder
 	end
-
-
 	Globals.SeekNodesFolder:Destroy()
 	Globals.RoomsNodesFolder:Destroy()
 	Globals.ManipulateBody:Destroy()
