@@ -1446,18 +1446,24 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 						local Pos = RootPart.Position
 						local Look = RootPart.CFrame.LookVector
 						local Right = RootPart.CFrame.RightVector
-						-- Вперёд
-						Humanoid:MoveTo(Pos + Look * 4)
-						task.wait(0.3)
-						-- Вправо
-						Humanoid:MoveTo(Pos + Right * 4)
-						task.wait(0.3)
-						-- Назад
-						Humanoid:MoveTo(Pos - Look * 4)
-						task.wait(0.3)
-						-- Влево
-						Humanoid:MoveTo(Pos - Right * 4)
-						task.wait(0.3)
+						-- 1 секунда вперёд
+						Humanoid:MoveTo(Pos + Look * 6)
+						task.wait(1)
+						-- 1 секунда назад
+						Pos = RootPart.Position
+						Look = RootPart.CFrame.LookVector
+						Humanoid:MoveTo(Pos - Look * 6)
+						task.wait(1)
+						-- 1 секунда налево
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos - Right * 6)
+						task.wait(1)
+						-- 1 секунду направо
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos + Right * 6)
+						task.wait(1)
 					else
 						task.wait(0.5)
 					end
@@ -1475,14 +1481,20 @@ Toggles.AutoRansomTrigger:OnChanged(function(Value)
 						local Pos = RootPart.Position
 						local Look = RootPart.CFrame.LookVector
 						local Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos + Look * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos + Right * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos - Look * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos - Right * 4)
-						task.wait(0.3)
+						Humanoid:MoveTo(Pos + Look * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Look = RootPart.CFrame.LookVector
+						Humanoid:MoveTo(Pos - Look * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos - Right * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos + Right * 6)
+						task.wait(1)
 					else
 						task.wait(0.5)
 					end
@@ -3902,14 +3914,20 @@ Functions.HandleObject = function(Object)
 						local Pos = RootPart.Position
 						local Look = RootPart.CFrame.LookVector
 						local Right = RootPart.CFrame.RightVector
-						Humanoid:MoveTo(Pos + Look * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos + Right * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos - Look * 4)
-						task.wait(0.3)
-						Humanoid:MoveTo(Pos - Right * 4)
-						task.wait(0.3)
+						Humanoid:MoveTo(Pos + Look * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Look = RootPart.CFrame.LookVector
+						Humanoid:MoveTo(Pos - Look * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos - Right * 6)
+						task.wait(1)
+						Pos = RootPart.Position
+						Right = RootPart.CFrame.RightVector
+						Humanoid:MoveTo(Pos + Right * 6)
+						task.wait(1)
 					else
 						task.wait(0.5)
 					end
